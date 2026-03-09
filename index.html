@@ -1,0 +1,1777 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Avila Tek · Guía de Requerimientos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+/* ══════════════════════════════════════════════
+   TOKENS
+══════════════════════════════════════════════ */
+:root{
+  --lime:#93DA33;--green:#005C30;--green2:#007A40;--green3:#00391C;
+  --bg:#080E08;--bg2:#0D150D;--bg3:#121C12;
+  --surface:#162016;--surface2:#1C2A1C;
+  --border:#243424;--border2:#2E422E;
+  --text:#EDF5E8;--text2:#9DB89A;--muted:#506850;
+  --r:14px;--rs:8px;
+  --shadow:0 4px 32px rgba(0,0,0,.55);
+}
+[data-theme="light"]{
+  --bg:#F2F7EE;--bg2:#FFFFFF;--bg3:#E8F2E2;
+  --surface:#FFFFFF;--surface2:#EDF5E8;
+  --border:#C8DFC0;--border2:#B0CF9F;
+  --text:#0A140A;--text2:#2E4E2A;--muted:#6A8A62;
+  --shadow:0 4px 32px rgba(0,60,0,.12);
+}
+
+/* ══════════════════════════════════════════════
+   RESET & BASE
+══════════════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);
+  transition:background .35s,color .35s;-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+/* ══════════════════════════════════════════════
+   CHROME
+══════════════════════════════════════════════ */
+.chrome-top{
+  position:fixed;top:0;left:0;right:0;height:56px;z-index:300;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 24px;
+  background:rgba(8,14,8,.85);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+  transition:background .35s,border-color .35s;
+}
+[data-theme="light"] .chrome-top{background:rgba(242,247,238,.88)}
+
+.logo{display:flex;align-items:center;gap:10px;user-select:none}
+.logo-sq{width:32px;height:32px;border-radius:7px;background:var(--lime);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Outfit',sans-serif;font-weight:800;font-size:15px;color:#000}
+.logo-name{font-family:'Outfit',sans-serif;font-weight:700;font-size:13px;
+  letter-spacing:.12em;color:var(--text)}
+
+.chrome-center{display:flex;align-items:center;gap:14px}
+.slide-counter{font-family:'Outfit',sans-serif;font-size:12px;color:var(--muted);
+  display:flex;gap:2px;align-items:center}
+.slide-counter .cur{color:var(--lime);font-weight:700;font-size:14px}
+
+.chrome-right{display:flex;align-items:center;gap:10px}
+
+.theme-btn{
+  width:38px;height:38px;border-radius:50%;border:1px solid var(--border2);
+  background:var(--surface);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:15px;color:var(--text2);transition:all .25s;
+}
+.theme-btn:hover{background:var(--lime);color:#000;border-color:var(--lime)}
+[data-theme="dark"] .icon-sun{display:none}
+[data-theme="light"] .icon-moon{display:none}
+
+.nav-arrow{
+  width:38px;height:38px;border-radius:50%;border:1px solid var(--border2);
+  background:var(--surface);cursor:pointer;color:var(--text2);
+  display:flex;align-items:center;justify-content:center;transition:all .25s;
+}
+.nav-arrow:hover{background:var(--lime);color:#000;border-color:var(--lime)}
+.nav-arrow:disabled{opacity:.25;pointer-events:none}
+
+/* ══════════════════════════════════════════════
+   PROGRESS + DOTS
+══════════════════════════════════════════════ */
+.progress-track{position:fixed;bottom:0;left:0;right:0;height:2px;background:var(--border);z-index:300}
+.progress-fill{height:100%;background:var(--lime);transition:width .4s cubic-bezier(.4,0,.2,1)}
+
+.dots-rail{
+  position:fixed;right:18px;top:50%;transform:translateY(-50%);
+  z-index:300;display:flex;flex-direction:column;gap:5px;
+}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--border2);
+  cursor:pointer;border:none;transition:all .22s;padding:0}
+.dot:hover{background:var(--lime);transform:scale(1.5)}
+.dot.on{background:var(--lime);transform:scale(1.6)}
+.dot.phase{background:var(--green2)}
+.dot.phase.on{background:var(--lime)}
+
+/* ══════════════════════════════════════════════
+   SLIDE SYSTEM
+══════════════════════════════════════════════ */
+.deck{width:100%;height:100vh;position:relative;overflow:hidden}
+.slide{
+  position:absolute;inset:0;opacity:0;pointer-events:none;
+  transform:translateX(48px);
+  transition:opacity .45s cubic-bezier(.4,0,.2,1),transform .45s cubic-bezier(.4,0,.2,1);
+  overflow:hidden;
+}
+.slide.active{opacity:1;pointer-events:all;transform:translateX(0)}
+.slide.out{opacity:0;transform:translateX(-48px)}
+
+.inner{
+  height:100%;padding:72px 72px 32px;
+  overflow-y:auto;
+  display:flex;flex-direction:column;
+  max-width:1200px;margin:0 auto;width:100%;
+}
+
+/* ══════════════════════════════════════════════
+   TYPE SYSTEM
+══════════════════════════════════════════════ */
+.eyebrow{font-size:10px;font-weight:700;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--lime);margin-bottom:6px}
+.h1{font-family:'Instrument Serif',serif;font-size:clamp(42px,6.5vw,84px);
+  line-height:1.0;color:var(--text);margin-bottom:14px}
+.h2{font-family:'Outfit',sans-serif;font-size:clamp(22px,3vw,38px);
+  font-weight:700;line-height:1.15;color:var(--text);margin-bottom:10px}
+.h3{font-family:'Outfit',sans-serif;font-size:16px;font-weight:700;
+  color:var(--text);margin-bottom:6px}
+.body{font-size:14px;line-height:1.65;color:var(--text2)}
+.lime{color:var(--lime)}
+.serif{font-family:'Instrument Serif',serif;font-style:italic}
+
+/* ══════════════════════════════════════════════
+   ATOMS
+══════════════════════════════════════════════ */
+.chip{
+  display:inline-flex;align-items:center;padding:4px 12px;
+  border-radius:100px;font-size:10px;font-weight:700;
+  letter-spacing:.14em;text-transform:uppercase;border:1px solid;
+}
+.chip-green{background:var(--green3);color:var(--lime);border-color:rgba(147,218,51,.25)}
+.chip-surface{background:var(--surface);color:var(--text2);border-color:var(--border)}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px}
+.card:hover{border-color:var(--border2)}
+.card-lime{border-color:rgba(147,218,51,.3);background:rgba(0,92,48,.18)}
+
+.tag{font-family:'Outfit',sans-serif;font-size:9px;font-weight:700;
+  letter-spacing:.18em;text-transform:uppercase;color:var(--lime);
+  display:block;margin-bottom:7px}
+
+.pill{display:inline-flex;padding:5px 13px;border-radius:100px;
+  font-size:12px;font-weight:600;border:1px solid var(--border);
+  background:var(--surface);color:var(--text2)}
+
+.divider{width:48px;height:3px;background:var(--lime);border-radius:2px;margin:14px 0}
+
+.quote{
+  border-left:3px solid var(--lime);padding:14px 18px;
+  background:var(--surface);border-radius:0 var(--rs) var(--rs) 0;
+  font-size:14px;font-style:italic;color:var(--text2);
+}
+
+/* ══════════════════════════════════════════════
+   ANIMATIONS
+══════════════════════════════════════════════ */
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes scaleIn{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+@keyframes drawLine{from{width:0}to{width:100%}}
+.anim{opacity:0;animation:fadeUp .55s ease forwards}
+.d1{animation-delay:.05s}.d2{animation-delay:.14s}.d3{animation-delay:.23s}
+.d4{animation-delay:.32s}.d5{animation-delay:.41s}.d6{animation-delay:.5s}
+
+/* ══════════════════════════════════════════════
+   GRID HELPERS
+══════════════════════════════════════════════ */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:20px;flex:1;min-height:0}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.g2-3{display:grid;grid-template-columns:2fr 3fr;gap:24px;flex:1;min-height:0}
+.col{display:flex;flex-direction:column;gap:12px;overflow-y:auto}
+
+/* ══════════════════════════════════════════════
+   SLIDE 1 — COVER
+══════════════════════════════════════════════ */
+#s1 .inner{justify-content:center;align-items:flex-start;position:relative}
+.cover-orb{
+  position:absolute;border-radius:50%;pointer-events:none;
+}
+.orb1{width:520px;height:520px;right:-140px;top:-180px;
+  background:radial-gradient(circle,rgba(0,92,48,.6) 0%,transparent 70%)}
+.orb2{width:300px;height:300px;left:-80px;bottom:-60px;
+  background:radial-gradient(circle,rgba(147,218,51,.1) 0%,transparent 70%)}
+.cover-tag{
+  display:inline-flex;padding:5px 16px;border-radius:100px;
+  background:var(--green3);border:1px solid rgba(147,218,51,.3);
+  font-size:10px;font-weight:700;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--lime);margin-bottom:22px;
+}
+.cover-h1{
+  font-family:'Instrument Serif',serif;
+  font-size:clamp(44px,7vw,90px);line-height:.97;
+  color:var(--text);margin-bottom:20px;max-width:700px;
+}
+.cover-sub{font-size:clamp(14px,1.5vw,18px);color:var(--text2);
+  max-width:500px;line-height:1.6;margin-bottom:36px}
+.cover-btn{
+  display:inline-flex;align-items:center;gap:9px;
+  padding:14px 30px;border-radius:100px;background:var(--lime);
+  color:#000;font-family:'Outfit',sans-serif;font-size:14px;font-weight:700;
+  border:none;cursor:pointer;margin-bottom:44px;
+  transition:all .25s;letter-spacing:.02em;
+}
+.cover-btn:hover{background:#a8e848;transform:scale(1.04);
+  box-shadow:0 8px 36px rgba(147,218,51,.4)}
+.cover-stats{
+  display:flex;gap:0;background:var(--surface);
+  border:1px solid var(--border);border-radius:var(--r);overflow:hidden;
+  width:fit-content;
+}
+.cstat{padding:16px 26px;display:flex;flex-direction:column;gap:3px}
+.cstat-n{font-family:'Outfit',sans-serif;font-size:30px;font-weight:800;color:var(--lime)}
+.cstat-l{font-size:11px;color:var(--muted);line-height:1.35}
+.cstat-div{width:1px;background:var(--border);align-self:stretch}
+
+/* ══════════════════════════════════════════════
+   SLIDE 2 — PROBLEM
+══════════════════════════════════════════════ */
+.problem-big{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  padding:28px;text-align:center;
+}
+.problem-num{
+  font-family:'Instrument Serif',serif;font-size:100px;line-height:1;
+  color:var(--lime);
+}
+.antipatterns{display:flex;flex-direction:column;gap:10px}
+.ap{display:flex;gap:12px;align-items:flex-start;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--rs);padding:13px 15px}
+.ap-x{color:#E05858;font-size:17px;flex-shrink:0;margin-top:1px}
+.ap strong{font-size:13px;display:block;margin-bottom:2px}
+.ap p{font-size:12px;color:var(--text2)}
+.goal-banner{
+  background:linear-gradient(135deg,var(--green) 0%,var(--green2) 100%);
+  border-radius:var(--rs);padding:14px 18px;font-size:13px;
+  color:rgba(255,255,255,.92);font-weight:500;
+}
+
+/* ══════════════════════════════════════════════
+   SLIDE 3 — ROLLING WAVE
+══════════════════════════════════════════════ */
+.wave-box{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:10px 16px;margin-bottom:16px;
+}
+.hcards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:14px}
+.hcard{background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:18px;transition:border-color .2s}
+.hcard.hl{border-color:var(--lime)}
+.hcard.dim{opacity:.5}
+.hcard:hover{border-color:var(--lime);opacity:1}
+.hcard-tag{font-size:10px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--lime);margin-bottom:7px}
+.hcard h3{font-size:15px;font-weight:700;margin-bottom:6px}
+.hcard p{font-size:12px;color:var(--text2);line-height:1.55}
+
+/* ══════════════════════════════════════════════
+   SLIDE 4 — GOLDEN CIRCLE
+══════════════════════════════════════════════ */
+.gc-wrap{display:flex;align-items:center;justify-content:center}
+.gc-rings{position:relative;width:220px;height:220px}
+.ring{position:absolute;border-radius:50%;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center}
+.ring-what{inset:0;border:2px solid var(--border);background:var(--surface)}
+.ring-how{inset:38px;border:2px solid var(--green2);background:var(--bg3)}
+.ring-why{inset:76px;border:2px solid var(--lime);background:var(--green)}
+.ring-lbl{font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
+.ring-sub{font-size:7px;color:var(--text2);max-width:64px;line-height:1.3;margin-top:2px}
+.ring-why .ring-sub{color:rgba(255,255,255,.65)}
+.gc-rows{display:flex;flex-direction:column;gap:12px}
+.gc-row{display:flex;gap:13px;align-items:flex-start;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--rs);padding:14px}
+.gc-dot{width:13px;height:13px;border-radius:50%;flex-shrink:0;margin-top:3px}
+.d-why{background:var(--lime)}
+.d-how{background:var(--green2)}
+.d-what{background:var(--border2)}
+.gc-row h4{font-size:13px;font-weight:700;margin-bottom:3px}
+.gc-row p{font-size:12px;color:var(--text2);line-height:1.5}
+
+/* ══════════════════════════════════════════════
+   SLIDE 5 — 5 STEPS CIRCLE
+══════════════════════════════════════════════ */
+.steps-layout{display:flex;gap:32px;align-items:center;flex:1;min-height:0}
+.steps-circle-wrap{flex-shrink:0;position:relative;width:300px;height:300px}
+.steps-svg{width:100%;height:100%}
+.steps-list{display:flex;flex-direction:column;gap:10px;flex:1}
+.step-row{display:flex;gap:14px;align-items:flex-start;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--rs);padding:13px 15px;
+  transition:border-color .2s,background .2s;cursor:default}
+.step-row:hover{border-color:var(--lime)}
+.step-num{width:32px;height:32px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Outfit',sans-serif;font-size:13px;font-weight:800;
+  background:var(--green3);color:var(--lime);border:2px solid rgba(147,218,51,.4)}
+.step-row h4{font-size:13px;font-weight:700;margin-bottom:3px}
+.step-row p{font-size:12px;color:var(--text2);line-height:1.45}
+
+/* ══════════════════════════════════════════════
+   STEP INTRO SLIDES (6,9,16,22,25)
+══════════════════════════════════════════════ */
+.step-intro{justify-content:center;position:relative;overflow:hidden}
+.step-bg-n{
+  position:absolute;right:-30px;top:50%;transform:translateY(-50%);
+  font-family:'Instrument Serif',serif;font-size:260px;line-height:1;
+  color:var(--green);opacity:.15;pointer-events:none;user-select:none;
+}
+.step-badge{
+  display:inline-flex;padding:5px 15px;border-radius:100px;
+  background:var(--green3);border:1px solid rgba(147,218,51,.3);
+  font-size:10px;font-weight:700;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--lime);margin-bottom:14px;
+  width:fit-content;
+}
+.step-title{
+  font-family:'Instrument Serif',serif;
+  font-size:clamp(40px,6vw,72px);line-height:1.0;
+  color:var(--text);margin-bottom:6px;
+}
+.step-sub{font-size:17px;font-style:italic;color:var(--lime);margin-bottom:12px}
+.step-goal-lbl{font-size:10px;font-weight:700;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--lime);margin-bottom:8px}
+.step-goal{font-size:15px;color:var(--text2);max-width:660px;
+  line-height:1.7;margin-bottom:20px}
+.step-buls{list-style:none;display:flex;flex-direction:column;gap:8px;max-width:640px}
+.step-buls li{padding:10px 14px 10px 32px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--rs);font-size:13px;color:var(--text2);
+  position:relative}
+.step-buls li::before{content:'';position:absolute;left:13px;top:50%;
+  transform:translateY(-50%);width:6px;height:6px;border-radius:50%;
+  background:var(--lime)}
+
+/* ══════════════════════════════════════════════
+   TECHNIQUE SLIDE LAYOUT
+══════════════════════════════════════════════ */
+.tech-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;flex:1;min-height:0}
+.tech-col{display:flex;flex-direction:column;gap:10px;overflow-y:auto}
+.tblock{background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--rs);padding:14px}
+.tblock p{font-size:12px;color:var(--text2);line-height:1.55}
+.tblock ol{font-size:12px;color:var(--text2);line-height:1.65;padding-left:17px}
+.tblock ol li{margin-bottom:3px}
+.tblock.ex{border-color:rgba(147,218,51,.22)}
+.vcap{font-size:11px;color:var(--muted);font-style:italic;text-align:center;margin-top:6px}
+
+/* 4-block grid */
+.fblocks{display:grid;grid-template-columns:1fr 1fr;gap:12px;flex:1}
+.fb{background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--rs);padding:14px}
+.fb p{font-size:12px;color:var(--text2);line-height:1.55}
+.fb ol{font-size:12px;color:var(--text2);line-height:1.65;padding-left:17px}
+.fb ol li{margin-bottom:3px}
+.fb.ex{border-color:rgba(147,218,51,.22)}
+
+/* ══════════════════════════════════════════════
+   STAKEHOLDER MATRIX VISUAL
+══════════════════════════════════════════════ */
+.matrix-vis{flex:1}
+.mq-grid{display:grid;grid-template-columns:1fr 1fr;
+  grid-template-rows:1fr 1fr;gap:3px;height:230px;
+  border-radius:var(--r);overflow:hidden;border:1px solid var(--border)}
+.mq{background:var(--surface);padding:12px;
+  display:flex;flex-direction:column;gap:7px}
+.mq.hl{background:rgba(0,92,48,.3);border:1px solid rgba(147,218,51,.3)}
+.mq-lbl{font-size:11px;font-weight:700;font-family:'Outfit',sans-serif;color:var(--text2)}
+.persona{width:42px;height:42px;border-radius:50%;
+  display:inline-flex;flex-direction:column;align-items:center;justify-content:center;
+  font-size:9px;font-weight:700;gap:1px;border:1px solid;cursor:default}
+.p-lime{background:var(--green3);color:var(--lime);border-color:var(--lime)}
+.p-mid{background:rgba(0,92,48,.35);color:var(--lime);border-color:rgba(147,218,51,.4)}
+.p-muted{background:var(--surface2);color:var(--muted);border-color:var(--border2)}
+.pname{font-size:7px;font-weight:400;opacity:.8}
+.maxis{font-size:9px;color:var(--muted);text-align:center;margin-top:5px}
+
+/* ══════════════════════════════════════════════
+   BENCH TABLE
+══════════════════════════════════════════════ */
+.btable{width:100%;border-collapse:collapse;font-size:12px}
+.btable th{padding:8px 10px;border-bottom:1px solid var(--border);
+  text-align:left;font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted)}
+.btable td{padding:8px 10px;border-bottom:1px solid var(--border);color:var(--text2)}
+.btable tr:last-child td{border-bottom:none}
+.bwrap{background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:14px;overflow:hidden}
+.c-ok{color:var(--lime)}.c-gap{color:#E05858}.c-warn{color:#D4A017}
+.bench-note{margin-top:10px;background:rgba(147,218,51,.07);
+  border:1px solid rgba(147,218,51,.2);border-radius:var(--rs);
+  padding:9px 12px;font-size:11px;color:var(--text2)}
+
+/* ══════════════════════════════════════════════
+   FORWARD-BACKWARD
+══════════════════════════════════════════════ */
+.fbp-wrap{background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:15px;display:flex;flex-direction:column;gap:11px;flex:1}
+.fbp-lbl{font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase}
+.lbl-fwd{color:var(--lime)}.lbl-bwd{color:#E05858}
+.fbp-flow{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.fbp-nd{background:rgba(0,92,48,.35);border:1px solid rgba(147,218,51,.4);
+  border-radius:var(--rs);padding:9px 11px;font-size:11px;font-weight:500;
+  text-align:center;min-width:68px}
+.fbp-arr{color:var(--lime);font-size:16px}
+.fbp-qs{display:flex;flex-direction:column;gap:7px}
+.fbq{background:var(--bg3);border-radius:var(--rs);padding:9px 12px;
+  font-size:11px;color:var(--text2);
+  display:flex;align-items:center;justify-content:space-between;
+  border-left:3px solid transparent}
+.fq-r{border-left-color:#E05858}.fq-y{border-left-color:#D4A017}.fq-m{border-left-color:var(--muted)}
+.new-req{background:var(--green3);color:var(--lime);font-size:9px;font-weight:700;
+  padding:2px 7px;border-radius:100px;white-space:nowrap}
+
+/* ══════════════════════════════════════════════
+   PRODUCT TREE
+══════════════════════════════════════════════ */
+.tree-vis{background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:15px;display:flex;flex-direction:column;gap:6px;flex:1}
+.tree-lev{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.tn{padding:7px 12px;border-radius:var(--rs);font-size:11px;font-weight:500;text-align:center}
+.tn-leaf{background:rgba(147,218,51,.07);border:1px dashed rgba(147,218,51,.3);color:var(--muted)}
+.tn-branch{background:rgba(0,92,48,.22);border:1px solid rgba(147,218,51,.3);color:var(--lime)}
+.tn-trunk{background:rgba(0,92,48,.45);border:2px solid var(--lime);
+  color:var(--text);font-weight:700;font-family:'Outfit',sans-serif}
+.tn-root{background:var(--surface2);border:1px solid var(--border2);color:var(--muted)}
+.tree-conn{height:1px;background:var(--border);margin:0 10%}
+.tree-lbl{font-size:10px;color:var(--muted);text-align:center;font-style:italic}
+.tree-lbl.lm{color:var(--lime)}
+
+/* ══════════════════════════════════════════════
+   AFFINITY BOARD
+══════════════════════════════════════════════ */
+.aff-board{background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:9px;flex:1}
+.aff-grp{border-radius:var(--rs);padding:10px}
+.ag-red{background:rgba(224,80,80,.07);border:1px solid rgba(224,80,80,.2)}
+.ag-lime{background:rgba(147,218,51,.06);border:1px solid rgba(147,218,51,.18)}
+.ag-muted{background:var(--bg3);border:1px solid var(--border)}
+.ag-hdr{font-size:11px;font-weight:700;margin-bottom:7px;
+  display:flex;justify-content:space-between;align-items:center}
+.ag-red .ag-hdr{color:#E05858}.ag-lime .ag-hdr{color:var(--lime)}.ag-muted .ag-hdr{color:var(--muted)}
+.sticky-row{display:flex;gap:6px;flex-wrap:wrap}
+.sk{padding:8px 10px;border-radius:6px;font-size:10px;text-align:center;min-width:54px;line-height:1.3}
+.sk-r{background:rgba(224,80,80,.17);color:#E07070;border:1px solid rgba(224,80,80,.22)}
+.sk-g{background:rgba(147,218,51,.14);color:var(--lime);border:1px solid rgba(147,218,51,.22)}
+.sk-m{background:var(--surface2);color:var(--muted);border:1px solid var(--border)}
+
+/* ══════════════════════════════════════════════
+   MOSCOW
+══════════════════════════════════════════════ */
+.moscow-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;flex:1}
+.mc{display:flex;gap:14px;align-items:flex-start;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:18px}
+.mc-let{width:48px;height:48px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:24px;font-weight:800;font-family:'Outfit',sans-serif}
+.mc-M .mc-let{background:var(--lime);color:#000}
+.mc-S .mc-let{background:rgba(147,218,51,.28);color:var(--lime);border:2px solid var(--lime)}
+.mc-C .mc-let{background:rgba(212,160,23,.2);color:#D4A017;border:2px solid #D4A017}
+.mc-W .mc-let{background:var(--surface2);color:var(--muted);border:2px solid var(--border2)}
+.mc-M{border-color:rgba(147,218,51,.28)}
+.mc h3{font-size:14px;font-weight:700;margin-bottom:5px}
+.mc-sub{font-size:10px;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.1em;font-weight:400;margin-left:6px}
+.mc p{font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:5px}
+.mc-ex{font-size:11px;color:var(--muted);font-style:italic}
+
+/* ══════════════════════════════════════════════
+   KANO
+══════════════════════════════════════════════ */
+.kano-card{display:flex;gap:12px;background:var(--surface);
+  border:1px solid var(--border);border-radius:var(--rs);padding:14px}
+.kano-ico{font-size:22px;flex-shrink:0;width:26px;text-align:center}
+.kano-card h4{font-size:14px;font-weight:700;margin-bottom:2px}
+.kano-sub{font-size:10px;color:var(--muted);font-style:italic;display:block;margin-bottom:4px}
+.kano-card p{font-size:12px;color:var(--text2);line-height:1.5}
+.kano-ex{font-size:11px;color:var(--muted);font-style:italic;margin-top:4px}
+.kano-chart{background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:12px;flex:1;display:flex;align-items:center;justify-content:center}
+
+/* ══════════════════════════════════════════════
+   RICE
+══════════════════════════════════════════════ */
+.rice-bar{background:var(--surface);border:1px solid rgba(147,218,51,.28);
+  border-radius:var(--r);padding:16px 22px;
+  display:flex;align-items:center;gap:16px;margin-bottom:18px}
+.rice-eq{font-size:20px;font-weight:800;color:var(--text);white-space:nowrap}
+.rice-frac{display:flex;flex-direction:column;align-items:center;gap:2px}
+.rice-num{font-size:14px;color:var(--lime);font-weight:500}
+.rice-line2{width:240px;height:2px;background:var(--lime)}
+.rice-den{font-size:14px;color:#E05858;font-weight:500}
+.rice-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin-bottom:16px}
+.rc{background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--rs);padding:13px;display:flex;gap:11px}
+.rc-let{width:32px;height:32px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:17px;font-weight:800}
+.rc-lime{background:var(--green3);color:var(--lime);border:2px solid var(--lime)}
+.rc-red{background:rgba(224,80,80,.18);color:#E05858;border:2px solid #E05858}
+.rc strong{font-size:12px;font-weight:700;display:block;margin-bottom:2px}
+.rc p{font-size:11px;color:var(--text2);margin-bottom:2px}
+.rc-sc{font-size:10px;color:var(--muted)}
+.rc-ex{font-size:10px;color:var(--lime);font-style:italic}
+.rice-calc-box{background:rgba(147,218,51,.07);border:1px solid rgba(147,218,51,.2);
+  border-radius:var(--r);padding:14px 22px;
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.rice-calc-ttl{font-size:13px;color:var(--text2)}
+.rice-calc{font-family:'Outfit',sans-serif;font-size:17px;color:var(--text)}
+.rice-score{font-size:32px;font-weight:800;color:var(--lime)}
+
+/* ══════════════════════════════════════════════
+   BUY A FEATURE
+══════════════════════════════════════════════ */
+.baf-board{background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:15px;display:flex;flex-direction:column;gap:10px;flex:1}
+.baf-ttl{font-size:10px;font-weight:700;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--lime)}
+.baf-items{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.baf-item{border-radius:var(--rs);padding:12px}
+.bi-yes{background:rgba(0,92,48,.28);border:1px solid rgba(147,218,51,.35)}
+.bi-no{background:var(--bg3);border:1px solid var(--border)}
+.bi-name{font-size:12px;font-weight:600;margin-bottom:4px}
+.bi-price{font-size:20px;font-weight:800;font-family:'Outfit',sans-serif}
+.bi-yes .bi-price{color:var(--lime)}.bi-no .bi-price{color:var(--muted);font-size:17px}
+.bi-st{font-size:10px;font-weight:700;margin-top:3px}
+.bi-yes .bi-st{color:var(--lime)}.bi-no .bi-st{color:var(--muted)}
+.baf-sum{display:flex;justify-content:space-between;
+  background:rgba(147,218,51,.07);border:1px solid rgba(147,218,51,.18);
+  border-radius:var(--rs);padding:9px 13px;font-size:12px;color:var(--text2)}
+
+/* ══════════════════════════════════════════════
+   IMPACT-EFFORT
+══════════════════════════════════════════════ */
+.ie-mat{display:grid;grid-template-columns:1fr 1fr;gap:3px;
+  border-radius:var(--r);overflow:hidden;border:1px solid var(--border);
+  flex:1;min-height:200px;max-height:280px;position:relative}
+.iq{background:var(--surface);padding:12px;
+  display:flex;flex-direction:column;gap:7px}
+.iq-tl{background:rgba(0,92,48,.28);border:1px solid rgba(147,218,51,.22)}
+.iq-tr{background:rgba(0,30,90,.18);border:1px solid rgba(85,153,204,.18)}
+.iq-bl{background:rgba(30,18,0,.18)}
+.iq-br{background:rgba(80,8,8,.13)}
+.iq-lbl{font-size:11px;font-weight:800;font-family:'Outfit',sans-serif}
+.lbl-qw{color:var(--lime)}.lbl-bb{color:#5599CC}.lbl-fi{color:#D4A017}.lbl-mp{color:#E05858}
+.iq-sub{font-size:9px;color:var(--muted)}
+.iq-dot{font-size:10px;padding:3px 7px;border-radius:100px;width:fit-content}
+.dot-g{background:rgba(147,218,51,.14);color:var(--lime);border:1px solid rgba(147,218,51,.28)}
+.dot-b{background:rgba(85,153,204,.14);color:#5599CC;border:1px solid rgba(85,153,204,.28)}
+.dot-y{background:rgba(212,160,23,.14);color:#D4A017;border:1px solid rgba(212,160,23,.28)}
+.dot-r{background:rgba(224,80,80,.11);color:#E05858;border:1px solid rgba(224,80,80,.2)}
+.ie-ax-x{position:absolute;bottom:4px;left:0;right:0;text-align:center;
+  font-size:9px;color:var(--muted);pointer-events:none}
+.ie-ax-y{position:absolute;left:-46px;top:50%;
+  transform:translateY(-50%) rotate(-90deg);
+  font-size:9px;color:var(--muted);pointer-events:none;white-space:nowrap}
+.ie-legend{display:flex;flex-direction:column;gap:9px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--rs);padding:12px}
+.ld{display:flex;gap:9px;align-items:center;font-size:12px;color:var(--text2)}
+.ld-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+
+/* ══════════════════════════════════════════════
+   INVEST
+══════════════════════════════════════════════ */
+.invest-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-bottom:15px}
+.inv-c{background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--rs);padding:13px;display:flex;gap:11px}
+.inv-let{width:38px;height:38px;border-radius:50%;flex-shrink:0;
+  background:rgba(147,218,51,.14);border:2px solid var(--lime);
+  color:var(--lime);font-size:20px;font-weight:800;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Outfit',sans-serif}
+.inv-c h4{font-size:13px;font-weight:700;margin-bottom:3px}
+.inv-c p{font-size:11px;color:var(--text2);line-height:1.5}
+.hu-box{background:var(--surface);border:1px solid rgba(147,218,51,.22);
+  border-radius:var(--r);padding:16px 20px}
+.hu-fmt{font-size:14px;color:var(--text2);line-height:1.7;margin-bottom:10px}
+.hhl{color:var(--lime);font-weight:500}
+.hhlw{color:var(--text);font-weight:500}
+.ca-wrap{display:flex;flex-direction:column;gap:4px}
+.ca-ttl{font-size:10px;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--lime);margin-bottom:4px}
+.ca-it{font-size:12px;color:var(--text2);padding-left:8px}
+
+/* ══════════════════════════════════════════════
+   STATES
+══════════════════════════════════════════════ */
+.state-d{display:flex;flex-direction:column;align-items:center;gap:4px;margin-top:10px}
+.sn{background:var(--bg3);border:1px solid var(--border);
+  border-radius:var(--rs);padding:8px 16px;font-size:12px;font-weight:600}
+.sn-active{border-color:var(--lime);color:var(--lime)}
+.sn-ok{background:rgba(0,92,48,.28);border-color:var(--lime);color:var(--lime)}
+.sn-err{background:rgba(224,80,80,.1);border-color:#E05858;color:#E05858}
+.sarr{font-size:12px;color:var(--muted)}
+.sfork{display:flex;gap:22px}
+.sfork-b{display:flex;flex-direction:column;align-items:center;gap:4px}
+
+/* ══════════════════════════════════════════════
+   PROTOTYPE MOCKUP
+══════════════════════════════════════════════ */
+.proto-wrap{background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:15px;display:flex;flex-direction:column;gap:12px;flex:1}
+.mock-phone{background:var(--bg3);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.mock-head{background:var(--green);color:var(--lime);font-size:11px;font-weight:700;padding:8px 12px}
+.mock-f{background:var(--surface2);border-bottom:1px solid var(--border);padding:9px 12px;font-size:11px;color:var(--text2)}
+.mock-fh{background:rgba(147,218,51,.1);border-color:var(--lime);color:var(--lime);font-weight:500}
+.mock-btn-bar{background:var(--lime);color:#000;text-align:center;padding:9px;font-size:12px;font-weight:700}
+.sb-wrap{display:flex;flex-direction:column;gap:6px}
+.sb-t{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.sb-frames{display:flex;gap:7px}
+.sbf{width:48px;height:36px;background:var(--bg3);border:1px solid var(--border);
+  border-radius:6px;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;font-size:12px;font-weight:700;color:var(--muted)}
+.sbf-lbl{font-size:8px;font-weight:400}
+.sbf-on{border-color:var(--lime);color:var(--lime);background:rgba(147,218,51,.08)}
+
+/* ══════════════════════════════════════════════
+   DVF
+══════════════════════════════════════════════ */
+.dvf-vis{background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:18px;display:flex;flex-direction:column;gap:14px;flex:1}
+.dvf-bars{display:flex;justify-content:center;gap:22px;height:180px}
+.dvf-bar{display:flex;flex-direction:column;align-items:center;gap:0;
+  width:76px;position:relative}
+.dvf-fill{background:linear-gradient(to top,var(--green) 0%,var(--lime) 100%);
+  border-radius:5px 5px 0 0;width:38px;
+  position:absolute;bottom:52px;transition:height .6s ease}
+.dvf-sc{font-size:26px;font-weight:800;color:var(--lime);
+  position:absolute;bottom:98px;z-index:1;font-family:'Outfit',sans-serif}
+.dvf-let{font-size:18px;font-weight:800;position:absolute;bottom:26px;font-family:'Outfit',sans-serif}
+.dvf-let.lm{color:var(--lime)}
+.dvf-nm{font-size:10px;font-weight:600;position:absolute;bottom:10px;text-align:center}
+.dvf-q{font-size:9px;color:var(--muted);position:absolute;bottom:-3px;white-space:nowrap;text-align:center}
+.dvf-tot{background:rgba(147,218,51,.07);border:1px solid rgba(147,218,51,.22);
+  border-radius:var(--rs);padding:11px 16px;
+  display:flex;align-items:center;gap:11px;flex-wrap:wrap;font-size:12px;color:var(--text2)}
+.dvf-tot-n{font-size:22px;font-weight:800;color:var(--lime);font-family:'Outfit',sans-serif}
+.dvf-pass{color:var(--lime);font-size:12px;font-weight:700}
+
+/* ══════════════════════════════════════════════
+   CASE STUDY
+══════════════════════════════════════════════ */
+.case-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.case-badge{background:var(--green3);color:var(--lime);border:1px solid rgba(147,218,51,.3);
+  font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  padding:5px 14px;border-radius:100px}
+.case-part{font-size:12px;color:var(--muted);font-family:'Outfit',sans-serif}
+.case-ctx{background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--rs);padding:10px 14px;font-size:12px;color:var(--text2);margin:7px 0}
+.case-2col{display:grid;grid-template-columns:1fr 1fr;gap:18px;flex:1;min-height:0;margin-top:4px}
+.case-col{display:flex;flex-direction:column;gap:8px;overflow-y:auto}
+.cphlbl{font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--lime);padding-bottom:4px;border-bottom:1px solid var(--border)}
+.cblock{background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--rs);padding:12px}
+.cblock h4{font-size:12px;font-weight:700;margin-bottom:5px}
+.cblock p{font-size:11px;color:var(--text2);line-height:1.55}
+.cblock.hl{border-color:rgba(147,218,51,.22)}
+.baf-compact{display:flex;flex-direction:column;gap:5px}
+.baf-r{display:flex;align-items:center;gap:8px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--rs);padding:8px 10px}
+.baf-r.yes{border-color:rgba(147,218,51,.22)}
+.baf-r.no{opacity:.55}
+.baf-m2{width:21px;height:21px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:9px;font-weight:800;flex-shrink:0}
+.bm-M{background:var(--lime);color:#000}
+.bm-S{background:rgba(147,218,51,.28);color:var(--lime);border:1px solid var(--lime)}
+.bm-W{background:var(--surface2);color:var(--muted);border:1px solid var(--border2)}
+.baf-fn{font-size:11px;flex:1}
+.baf-fp{font-size:12px;font-weight:700;white-space:nowrap}
+.baf-r.yes .baf-fp{color:var(--lime)}.baf-r.no .baf-fp{color:var(--muted)}
+.baf-ri{font-size:10px;color:var(--muted);white-space:nowrap}
+.chk{color:var(--lime);font-weight:700;font-size:14px;flex-shrink:0}
+.crs{color:#E05858;font-weight:700;font-size:14px;flex-shrink:0}
+.mvp-b{background:rgba(0,92,48,.28);border:1px solid rgba(147,218,51,.28);
+  border-radius:var(--rs);padding:9px 13px;font-size:12px;color:var(--lime)}
+.hu-list{display:flex;flex-direction:column;gap:9px;flex:1;overflow-y:auto}
+.hu-c{background:var(--surface);border:1px solid rgba(147,218,51,.2);
+  border-radius:var(--r);padding:13px}
+.hu-id{font-size:12px;font-weight:800;color:var(--lime);margin-bottom:5px;
+  display:flex;gap:9px;align-items:center;font-family:'Outfit',sans-serif}
+.inv-ck{font-size:10px;font-weight:400;background:rgba(147,218,51,.1);
+  color:var(--lime);padding:2px 8px;border-radius:100px;
+  border:1px solid rgba(147,218,51,.28);font-family:'Outfit',sans-serif}
+.hu-body{font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:8px}
+.hu-cas{display:flex;flex-wrap:wrap;gap:4px}
+.dict-note{background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--rs);padding:9px 13px;font-size:11px;color:var(--muted);margin-top:8px}
+.proto-steps{display:flex;flex-direction:column;gap:8px}
+.ps{display:flex;gap:12px;align-items:flex-start;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--rs);padding:11px}
+.ps-n{width:26px;height:26px;border-radius:50%;background:var(--lime);color:#000;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:800;flex-shrink:0;font-family:'Outfit',sans-serif}
+.ps strong{font-size:12px;display:block;margin-bottom:3px}
+.ps p{font-size:11px;color:var(--text2);line-height:1.5}
+.dvf-tbl-wrap{background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);overflow:hidden}
+.dvf-tbl{width:100%;border-collapse:collapse;font-size:12px}
+.dvf-tbl th{text-align:left;padding:8px 11px;background:var(--bg3);
+  font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted);border-bottom:1px solid var(--border)}
+.dvf-tbl td{padding:8px 11px;border-bottom:1px solid var(--border);color:var(--text2)}
+.dvf-tbl tr:last-child td{border-bottom:none}
+.pass-r td:nth-child(2),.pass-r td:nth-child(3),.pass-r td:nth-child(4){color:var(--lime);font-weight:600}
+.fail-r{opacity:.6}
+.okr-box{background:rgba(147,218,51,.06);border:1px solid rgba(147,218,51,.18);
+  border-radius:var(--rs);padding:11px 13px;margin-top:9px}
+.okr-t{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--lime);margin-bottom:5px}
+.okr-it{font-size:11px;color:var(--text2);padding:3px 0;
+  border-bottom:1px dashed var(--border)}
+.okr-it:last-child{border-bottom:none}
+.scope-f{background:linear-gradient(135deg,var(--green) 0%,var(--green2) 100%);
+  border-radius:var(--rs);padding:11px 15px;font-size:12px;font-weight:700;
+  color:#fff;text-align:center;margin-top:9px;letter-spacing:.02em}
+
+/* ══════════════════════════════════════════════
+   UTILITY VISUAL NOTES
+══════════════════════════════════════════════ */
+.vnote{margin-top:9px;font-size:11px;color:var(--muted);
+  background:var(--bg3);border-radius:var(--rs);padding:8px 10px;font-style:italic}
+.jad-roles{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.role-pill{padding:4px 10px;border-radius:100px;background:var(--surface2);
+  border:1px solid var(--border);font-size:11px;color:var(--text2)}
+.rp-lime{background:var(--green3);color:var(--lime);border-color:var(--lime)}
+
+/* ══════════════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════════════ */
+@media(max-width:900px){
+  .inner{padding:60px 32px 28px}
+  .tech-grid,.g2,.case-2col{grid-template-columns:1fr}
+  .fblocks,.invest-grid,.rice-cards,.moscow-grid{grid-template-columns:1fr 1fr}
+  .step-bg-n{font-size:140px}
+  .dots-rail{display:none}
+}
+@media(max-width:600px){
+  .inner{padding:56px 18px 22px}
+  .fblocks,.invest-grid,.rice-cards,.moscow-grid{grid-template-columns:1fr}
+  .hcards{grid-template-columns:1fr}
+  .g3,.g4{grid-template-columns:1fr 1fr}
+  .steps-layout{flex-direction:column}
+  .steps-circle-wrap{width:200px;height:200px}
+}
+</style>
+</head>
+<body>
+
+<!-- CHROME TOP -->
+<header class="chrome-top">
+  <div class="logo">
+    <div class="logo-sq">A</div>
+    <span class="logo-name">AVILA TEK</span>
+  </div>
+  <div class="chrome-center">
+    <button class="nav-arrow" id="prevBtn" disabled aria-label="Anterior">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M10 3L5 8L10 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <div class="slide-counter"><span class="cur" id="cur">1</span><span style="color:var(--muted)">&nbsp;/&nbsp;31</span></div>
+    <button class="nav-arrow" id="nextBtn" aria-label="Siguiente">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M6 3L11 8L6 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+    </button>
+  </div>
+  <div class="chrome-right">
+    <button class="theme-btn" id="themeBtn" aria-label="Toggle theme">
+      <span class="icon-sun">☀</span>
+      <span class="icon-moon">◑</span>
+    </button>
+  </div>
+</header>
+
+<!-- DOTS -->
+<nav class="dots-rail" id="dotsRail"></nav>
+
+<!-- PROGRESS -->
+<div class="progress-track"><div class="progress-fill" id="pFill"></div></div>
+
+<!-- ════════════════════════════════════════════
+     DECK
+════════════════════════════════════════════ -->
+<main class="deck" id="deck">
+
+<!-- ══ S1 — COVER ══ -->
+<section class="slide active" id="s1">
+<div class="inner" style="justify-content:center;align-items:flex-start;position:relative">
+  <div class="cover-orb orb1"></div>
+  <div class="cover-orb orb2"></div>
+  <div class="cover-tag anim d1">Software Factory · Engineering Standards</div>
+  <div class="cover-h1 anim d2">Guía Maestra de<br/><span class="lime">Requerimientos</span></div>
+  <p class="cover-sub anim d3">Transformando ideas abstractas en productos de alto valor. Un manual táctico para la Tríada bajo Rolling Wave Planning.</p>
+  <button class="cover-btn anim d4" onclick="goTo(1)">Comenzar el Viaje →</button>
+  <div class="cover-stats anim d5">
+    <div class="cstat"><span class="cstat-n">70%</span><span class="cstat-l">proyectos fallan por<br/>malos requerimientos</span></div>
+    <div class="cstat-div"></div>
+    <div class="cstat"><span class="cstat-n">5</span><span class="cstat-l">pasos del<br/>ciclo</span></div>
+    <div class="cstat-div"></div>
+    <div class="cstat"><span class="cstat-n">31</span><span class="cstat-l">láminas<br/>tácticas</span></div>
+  </div>
+</div>
+</section>
+
+<!-- ══ S2 — EL PROBLEMA ══ -->
+<section class="slide" id="s2">
+<div class="inner">
+  <div class="eyebrow">Por Qué Importa</div>
+  <div class="h2">El <span class="lime">Problema Real</span> de los Proyectos de Software</div>
+  <div class="g2" style="margin-top:14px">
+    <div class="col">
+      <div class="problem-big">
+        <div class="problem-num">70<span style="font-size:56px">%</span></div>
+        <p class="body" style="margin-top:8px">de los proyectos de software fallan o son cancelados por deficiente recolección de requerimientos.</p>
+      </div>
+      <div class="quote">"El cliente no sabe lo que quiere — pero espera que tú adivines."</div>
+    </div>
+    <div class="col">
+      <div class="antipatterns">
+        <div class="ap"><span class="ap-x">✗</span><div><strong>Scope Creep incontrolado</strong><p>Cada semana aparece una nueva prioridad 1.</p></div></div>
+        <div class="ap"><span class="ap-x">✗</span><div><strong>Equipos que construyen sin entender</strong><p>Pantallas sin propósito de negocio real.</p></div></div>
+        <div class="ap"><span class="ap-x">✗</span><div><strong>Retrabajo costoso</strong><p>Un cambio en producción cuesta 100× más que en diseño.</p></div></div>
+        <div class="ap"><span class="ap-x">✗</span><div><strong>Falta de alineación</strong><p>PM, Tech y Diseño construyen cosas distintas.</p></div></div>
+      </div>
+      <div class="goal-banner">🎯 <strong>Objetivo Avila Tek:</strong> Ser consultores estratégicos, no tomadores de pedidos.</div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ══ S3 — ROLLING WAVE ══ -->
+<section class="slide" id="s3">
+<div class="inner">
+  <div class="eyebrow">Mentalidad Base</div>
+  <div class="h2">Rolling Wave <span class="lime">Planning</span></div>
+  <p class="body" style="margin-bottom:14px">Acepta la incertidumbre. Refina progresivamente a medida que el proyecto avanza.</p>
+  <div class="wave-box">
+    <svg viewBox="0 0 900 80" width="100%" height="70" preserveAspectRatio="none">
+      <defs><linearGradient id="wg" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stop-color="#005C30" stop-opacity="1"/>
+        <stop offset="60%" stop-color="#93DA33" stop-opacity=".7"/>
+        <stop offset="100%" stop-color="#93DA33" stop-opacity=".2"/>
+      </linearGradient></defs>
+      <path d="M0 55 C100 15,200 70,300 35 C400 0,500 65,600 28 C700 0,800 48,900 20" stroke="url(#wg)" stroke-width="2.5" fill="none"/>
+      <path d="M0 55 C100 15,200 70,300 35 C400 0,500 65,600 28 C700 0,800 48,900 20 L900 80 L0 80Z" fill="url(#wg)" opacity=".1"/>
+      <circle cx="300" cy="35" r="6" fill="#93DA33"/><circle cx="600" cy="28" r="6" fill="#93DA33" opacity=".65"/><circle cx="900" cy="20" r="5" fill="#93DA33" opacity=".3"/>
+      <line x1="300" y1="5" x2="300" y2="70" stroke="#93DA33" stroke-width="1" stroke-dasharray="4" opacity=".35"/>
+      <line x1="600" y1="5" x2="600" y2="70" stroke="#93DA33" stroke-width="1" stroke-dasharray="4" opacity=".2"/>
+      <text x="150" y="12" fill="#93DA33" font-size="10" font-family="Outfit" font-weight="700" text-anchor="middle">H1</text>
+      <text x="450" y="12" fill="#93DA33" font-size="10" font-family="Outfit" font-weight="700" text-anchor="middle" opacity=".65">H2</text>
+      <text x="750" y="12" fill="#93DA33" font-size="10" font-family="Outfit" font-weight="700" text-anchor="middle" opacity=".3">H3</text>
+    </svg>
+  </div>
+  <div class="hcards">
+    <div class="hcard hl"><div class="hcard-tag">H1 · Próximo Sprint</div><h3>Compromiso</h3><p><strong>Known Knowns (KK).</strong> Requerimientos con criterios de aceptación claros y factibilidad técnica validada. Listos para codificar.</p></div>
+    <div class="hcard"><div class="hcard-tag">H2 · 1–2 Meses</div><h3>Anticipación</h3><p><strong>Known Unknowns (KU).</strong> Épicas identificadas que requieren Spikes de investigación o diseño previo antes del sprint.</p></div>
+    <div class="hcard dim"><div class="hcard-tag">H3 · Visión Lejana</div><h3>Hoja de Ruta</h3><p><strong>Unknown Unknowns (UU).</strong> Incógnitas gestionadas mediante hitos y guardrails de presupuesto. Se refinan progresivamente.</p></div>
+  </div>
+  <div class="quote">💡 "Planifica lo que sabes. Describe lo que no sabes."</div>
+</div>
+</section>
+
+<!-- ══ S4 — CÍRCULO DORADO ══ -->
+<section class="slide" id="s4">
+<div class="inner">
+  <div class="eyebrow">Mentalidad</div>
+  <div class="h2">El Círculo <span class="lime">Dorado</span></div>
+  <div class="g2" style="margin-top:14px;align-items:center">
+    <div class="gc-wrap">
+      <div class="gc-rings">
+        <div class="ring ring-what"><span class="ring-lbl">QUÉ</span><span class="ring-sub">Funcionalidad</span></div>
+        <div class="ring ring-how"><span class="ring-lbl">CÓMO</span><span class="ring-sub">Proceso actual</span></div>
+        <div class="ring ring-why"><span class="ring-lbl lime">POR QUÉ</span><span class="ring-sub" style="color:rgba(255,255,255,.65)">Dolor del negocio</span></div>
+      </div>
+    </div>
+    <div class="gc-rows">
+      <div class="gc-row"><div class="gc-dot d-why"></div><div><h4 class="lime">Por Qué — El Dolor Real</h4><p>¿Cuál es el dolor del negocio? El propósito que mueve todo. Sin entenderlo, cualquier solución es un disparo en la oscuridad.</p></div></div>
+      <div class="gc-row"><div class="gc-dot d-how"></div><div><h4>Cómo — El Proceso Actual</h4><p>¿Cómo trabajan hoy los usuarios? Entendemos el proceso exhaustivamente antes de proponer cualquier pantalla o feature.</p></div></div>
+      <div class="gc-row"><div class="gc-dot d-what"></div><div><h4>Qué — La Funcionalidad</h4><p>¿Qué construiremos? Las HUs y features. Solo llegamos aquí después de entender el Por Qué y el Cómo.</p></div></div>
+      <div class="ap" style="border-color:rgba(224,80,80,.25)"><span class="ap-x">⚠</span><div><strong style="font-size:12px">Anti-patrón</strong><p>Comenzar preguntando "¿Qué pantallas quieren?" en lugar de "¿Qué problema tienen hoy?"</p></div></div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ══ S5 — 5 PASOS ══ -->
+<section class="slide" id="s5">
+<div class="inner">
+  <div class="eyebrow">El Proceso</div>
+  <div class="h2">Los <span class="lime">5 Pasos</span> del Ciclo de Requerimientos</div>
+  <div class="steps-layout" style="margin-top:16px">
+    <div class="steps-circle-wrap">
+      <svg class="steps-svg" viewBox="0 0 300 300">
+        <defs>
+          <linearGradient id="cg" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#005C30"/><stop offset="100%" stop-color="#93DA33" stop-opacity=".4"/>
+          </linearGradient>
+        </defs>
+        <circle cx="150" cy="150" r="120" fill="none" stroke="url(#cg)" stroke-width="1.5" stroke-dasharray="6 4"/>
+        <circle cx="150" cy="150" r="44" fill="#005C30" stroke="#93DA33" stroke-width="1.5"/>
+        <text x="150" y="146" text-anchor="middle" fill="#93DA33" font-family="Outfit" font-weight="800" font-size="11">CICLO</text>
+        <text x="150" y="160" text-anchor="middle" fill="#93DA33" font-family="Outfit" font-size="9">ITERATIVO</text>
+        <!-- Step labels around circle -->
+        <g transform="translate(150,30)"><circle r="22" fill="#0D150D" stroke="#93DA33" stroke-width="1.5"/><text text-anchor="middle" y="-5" fill="#93DA33" font-family="Outfit" font-weight="700" font-size="9">01</text><text text-anchor="middle" y="7" fill="#9DB89A" font-family="Outfit" font-size="8">Preparación</text></g>
+        <g transform="translate(262,112)"><circle r="22" fill="#0D150D" stroke="#93DA33" stroke-width="1.5" opacity=".8"/><text text-anchor="middle" y="-5" fill="#93DA33" font-family="Outfit" font-weight="700" font-size="9">02</text><text text-anchor="middle" y="7" fill="#9DB89A" font-family="Outfit" font-size="8">Obtención</text></g>
+        <g transform="translate(210,248)"><circle r="22" fill="#0D150D" stroke="#93DA33" stroke-width="1.5" opacity=".7"/><text text-anchor="middle" y="-5" fill="#93DA33" font-family="Outfit" font-weight="700" font-size="9">03</text><text text-anchor="middle" y="7" fill="#9DB89A" font-family="Outfit" font-size="7">Análisis</text></g>
+        <g transform="translate(90,248)"><circle r="22" fill="#0D150D" stroke="#93DA33" stroke-width="1.5" opacity=".7"/><text text-anchor="middle" y="-5" fill="#93DA33" font-family="Outfit" font-weight="700" font-size="9">04</text><text text-anchor="middle" y="7" fill="#9DB89A" font-family="Outfit" font-size="7">Especific.</text></g>
+        <g transform="translate(38,112)"><circle r="22" fill="#0D150D" stroke="#93DA33" stroke-width="1.5" opacity=".8"/><text text-anchor="middle" y="-5" fill="#93DA33" font-family="Outfit" font-weight="700" font-size="9">05</text><text text-anchor="middle" y="7" fill="#9DB89A" font-family="Outfit" font-size="8">Validación</text></g>
+        <!-- Arrows -->
+        <path d="M 172 30 A 120 120 0 0 1 262 112" fill="none" stroke="#93DA33" stroke-width="1.2" opacity=".5" marker-end="url(#arr)"/>
+        <path d="M 262 134 A 120 120 0 0 1 210 226" fill="none" stroke="#93DA33" stroke-width="1.2" opacity=".45" marker-end="url(#arr)"/>
+        <path d="M 188 248 A 120 120 0 0 1 112 248" fill="none" stroke="#93DA33" stroke-width="1.2" opacity=".4" marker-end="url(#arr)"/>
+        <path d="M 68 226 A 120 120 0 0 1 38 134" fill="none" stroke="#93DA33" stroke-width="1.2" opacity=".45" marker-end="url(#arr)"/>
+        <path d="M 38 90 A 120 120 0 0 1 128 30" fill="none" stroke="#93DA33" stroke-width="1.2" opacity=".5" marker-end="url(#arr)"/>
+        <defs><marker id="arr" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6Z" fill="#93DA33" opacity=".6"/></marker></defs>
+      </svg>
+    </div>
+    <div class="steps-list">
+      <div class="step-row"><div class="step-num">01</div><div><h4>Preparación</h4><p>Investigar la industria, mapear stakeholders y llegar con hipótesis formadas — no con hoja en blanco.</p></div></div>
+      <div class="step-row"><div class="step-num">02</div><div><h4>Obtención (Elicitación)</h4><p>Extraer información centrada en el espacio del problema usando 6 técnicas: entrevistas, talleres, observación, juegos colaborativos y más.</p></div></div>
+      <div class="step-row"><div class="step-num">03</div><div><h4>Análisis y Priorización</h4><p>Filtrar y organizar la lista de deseos para definir el MVP con marcos objetivos: RICE, MoSCoW, Kano, Impacto/Esfuerzo.</p></div></div>
+      <div class="step-row"><div class="step-num">04</div><div><h4>Especificación</h4><p>Traducir necesidades a Historias de Usuario bajo INVEST y Casos de Uso sin ambigüedad.</p></div></div>
+      <div class="step-row"><div class="step-num">05</div><div><h4>Validación</h4><p>Prototipar, evaluar con la matriz DVF y obtener el Sign-off del cliente antes de codificar.</p></div></div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ══ S6 — INTRO PASO 1 ══ -->
+<section class="slide" id="s6">
+<div class="inner step-intro">
+  <div class="step-bg-n">01</div>
+  <div class="step-badge">Paso 1 de 5</div>
+  <div class="step-title">Preparación</div>
+  <div class="divider"></div>
+  <div class="step-goal-lbl">Objetivo del Paso</div>
+  <p class="step-goal">Llegar a cada sesión con la información <em>"masticada"</em>. El levantamiento empieza mucho antes de sentarse con el cliente. Entrar con hoja en blanco es un error profesional inaceptable en Avila Tek: debemos investigar la industria, revisar documentación existente, mapear actores clave y construir hipótesis previas de requerimientos para validar — no descubrir desde cero.</p>
+  <ul class="step-buls">
+    <li>Investigar industria, competidores y modelo de negocio del cliente</li>
+    <li>Revisar documentación existente: SOPs, flujos, reportes de incidencias</li>
+    <li>Construir hipótesis de usuarios, flujos principales y pains probables</li>
+    <li>Mapear todos los stakeholders con su Poder e Interés</li>
+    <li>Preparar preguntas abiertas orientadas al dolor y al proceso</li>
+  </ul>
+</div>
+</section>
+
+<!-- ══ S7 — MATRIZ STAKEHOLDERS ══ -->
+<section class="slide" id="s7">
+<div class="inner">
+  <div class="eyebrow">Paso 1 · Preparación</div>
+  <div class="h2">Técnica: Matriz de <span class="lime">Stakeholders</span></div>
+  <div class="tech-grid" style="margin-top:12px">
+    <div class="tech-col">
+      <div class="tblock"><div class="tag">Descripción</div><p>Mapeo bidimensional que clasifica a todos los involucrados según Poder de decisión e Interés en el proyecto. Permite diseñar estrategias de comunicación diferenciadas y nunca sorprenderse con un veto tardío.</p></div>
+      <div class="tblock"><div class="tag">Casos de Uso</div><p>Inicio de cualquier proyecto para identificar a quién entrevistar, quién tiene veto final y quién puede convertirse en sponsor o detractor inesperado.</p></div>
+      <div class="tblock"><div class="tag">Paso a Paso</div><ol><li>Listar TODOS los stakeholders sin filtro</li><li>Calificar cada uno: Poder (1–5) × Interés (1–5)</li><li>Ubicarlos en la matriz por cuadrante</li><li>Definir estrategia de gestión por cuadrante</li><li>Revisar y actualizar en cada fase del proyecto</li></ol></div>
+      <div class="tblock ex"><div class="tag">Ejemplo Aplicado</div><p>En un proyecto de nómina: el CEO (Alto P, Alto I) → administrar de cerca. Área legal (Alto P, Bajo I) → mantener satisfecha con reportes ejecutivos. El cajero (Bajo P, Alto I) → usuario clave en entrevistas One-on-One.</p></div>
+    </div>
+    <div class="tech-col">
+      <div class="matrix-vis">
+        <div class="mq-grid">
+          <div class="mq"><span class="mq-lbl">Mantener Satisfechos</span><div class="persona p-mid">DIR<div class="pname">Dirección</div></div></div>
+          <div class="mq hl"><span class="mq-lbl lime">Gestionar de Cerca</span><div style="display:flex;gap:7px"><div class="persona p-lime">CEO<div class="pname">Promotor</div></div><div class="persona p-lime" style="width:34px;height:34px;font-size:7px">OPS<div class="pname">Gerente</div></div></div></div>
+          <div class="mq"><span class="mq-lbl">Monitorear</span></div>
+          <div class="mq"><span class="mq-lbl">Mantener Informados</span><div class="persona p-muted">USR<div class="pname">Usuario</div></div></div>
+        </div>
+        <div class="maxis">← Bajo Interés ————————————— Alto Interés →</div>
+        <div class="maxis" style="margin-top:2px">← Bajo Poder · Alto Poder →</div>
+      </div>
+      <p class="vcap">Cuadrante superior derecho = prioridad máxima de gestión</p>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ══ S8 — BENCHMARKING ══ -->
+<section class="slide" id="s8">
+<div class="inner">
+  <div class="eyebrow">Paso 1 · Preparación</div>
+  <div class="h2">Técnica: Análisis de Documentación y <span class="lime">Benchmarking</span></div>
+  <div class="tech-grid" style="margin-top:12px">
+    <div class="tech-col">
+      <div class="tblock"><div class="tag">Descripción</div><p>Revisión sistemática de documentos internos del cliente (SOPs, reportes, flujos existentes) y análisis de soluciones competidoras antes de la primera sesión. El PM llega con hipótesis formadas, no con hoja en blanco.</p></div>
+      <div class="tblock"><div class="tag">Casos de Uso</div><p>Proyectos con documentación existente. Industrias reguladas (finanzas, salud) donde la terminología técnica es crítica. Sistemas de reemplazo de software legacy donde los flujos "raros" tienen razones históricas.</p></div>
+      <div class="tblock"><div class="tag">Paso a Paso</div><ol><li>Solicitar: SOPs, diagramas de flujo, reportes de incidencias, contratos</li><li>Mapear el glosario de términos del negocio</li><li>Investigar 3–5 competidores o soluciones similares del mercado</li><li>Documentar patrones comunes y brechas detectadas</li><li>Preparar hipótesis de requerimientos para validar en la primera sesión</li></ol></div>
+      <div class="tblock ex"><div class="tag">Ejemplo Aplicado</div><p>Para un cliente logístico: el PM revisa el software actual y detecta que el 80% de los tickets en Zendesk son por "entregas sin notificación". Llega con hipótesis de notificaciones proactivas, ahorrando 2 horas de elicitación básica.</p></div>
+    </div>
+    <div class="tech-col">
+      <div class="bwrap">
+        <div class="tag">Tabla Comparativa de Benchmark</div>
+        <table class="btable">
+          <thead><tr><th>Criterio</th><th>Proceso Actual</th><th>Competidor A</th><th>Competidor B</th></tr></thead>
+          <tbody>
+            <tr><td>Notificaciones</td><td class="c-gap">❌ Sin notif.</td><td class="c-ok">✓ SMS+Email</td><td class="c-ok">✓ Push+SMS</td></tr>
+            <tr><td>App Móvil</td><td class="c-ok">✓ Básica</td><td class="c-ok">✓ Offline</td><td class="c-warn">⚠ Solo WiFi</td></tr>
+            <tr><td>Dashboard</td><td class="c-gap">❌ Manual</td><td class="c-ok">✓ Tiempo real</td><td class="c-ok">✓ Reportes</td></tr>
+            <tr><td>Integración ERP</td><td class="c-gap">❌ Sin integración</td><td class="c-ok">✓ SAP</td><td class="c-warn">⚠ Manual</td></tr>
+          </tbody>
+        </table>
+        <div class="bench-note">💡 Las brechas resaltadas se convierten en hipótesis de requerimientos críticos para la primera sesión.</div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ══ S9 — INTRO PASO 2 ══ -->
+<section class="slide" id="s9">
+<div class="inner step-intro">
+  <div class="step-bg-n">02</div>
+  <div class="step-badge">Paso 2 de 5</div>
+  <div class="step-title">Obtención</div>
+  <p class="step-sub">Elicitación centrada en el "Cómo"</p>
+  <div class="divider"></div>
+  <div class="step-goal-lbl">Objetivo del Paso</div>
+  <p class="step-goal">Extraer la información esencial centrándonos en el espacio del problema. Antes de proponer cualquier pantalla, debemos entender con profundidad <em>cómo trabaja hoy el usuario</em>, qué fricciones enfrenta y qué resultados necesita. Usamos 6 técnicas de elicitación adaptadas al contexto de cada proyecto.</p>
+  <ul class="step-buls">
+    <li>Forward–Backward Pass — mapeo de flujos transaccionales y fricción</li>
+    <li>Descomposición Funcional y Árbol de Producto (Product Tree)</li>
+    <li>Juegos Colaborativos — Affinity Map y Brainstorming</li>
+    <li>Entrevistas One-on-One</li>
+    <li>Talleres Facilitados — JAD (Joint Application Development)</li>
+    <li>Observación de Campo — Job Shadowing</li>
+  </ul>
+</div>
+</section>
+
+<!-- ══ S10 — FORWARD-BACKWARD ══ -->
+<section class="slide" id="s10">
+<div class="inner">
+  <div class="eyebrow">Paso 2 · Obtención</div>
+  <div class="h2">Técnica: <span class="lime">Forward–Backward Pass</span></div>
+  <div class="tech-grid" style="margin-top:12px">
+    <div class="tech-col">
+      <div class="tblock"><div class="tag">Descripción</div><p>Combina listas con swimlanes para mapear un flujo transaccional en dos pasadas: Forward (flujo ideal de inicio a fin) y Backward (retroceder preguntando qué puede fallar). Genera requerimientos de casos borde invisibles en conversaciones normales.</p></div>
+      <div class="tblock"><div class="tag">Casos de Uso</div><p>Mapeo de flujos transaccionales o de aprobación multinivel. Checkout, despacho logístico, onboarding. Cuando un error en un paso afecta todos los siguientes.</p></div>
+      <div class="tblock"><div class="tag">Paso a Paso</div><ol><li><strong>Forward:</strong> Listar el flujo ideal "Quién + Acción" de inicio a fin</li><li><strong>Visualización:</strong> Dibujar swimlane por actor con cada acción</li><li><strong>Backward:</strong> Retroceder de un paso a la vez desde el final</li><li><strong>Fricción:</strong> Preguntar "¿Cuánto tarda?", "¿Qué puede salir mal aquí?"</li><li>Registrar cada nuevo requerimiento descubierto</li></ol></div>
+      <div class="tblock ex"><div class="tag">Ejemplo Aplicado</div><p>Flujo de pago. Al retroceder de "Emite recibo" → "Procesa tarjeta" preguntamos: "¿Y si la tarjeta no tiene fondos?" → nace req. de reintentos. Al retroceder a "Carrito": "¿Y si el ítem se agota?" → req. de reserva de stock.</p></div>
+    </div>
+    <div class="tech-col">
+      <div class="fbp-wrap">
+        <div class="fbp-lbl lbl-fwd">→ FORWARD — Flujo ideal</div>
+        <div class="fbp-flow">
+          <div class="fbp-nd">Cliente<br/>selecciona</div>
+          <div class="fbp-arr">→</div>
+          <div class="fbp-nd">Carrito<br/>actualizado</div>
+          <div class="fbp-arr">→</div>
+          <div class="fbp-nd">Procesa<br/>pago</div>
+          <div class="fbp-arr">→</div>
+          <div class="fbp-nd">Emite<br/>recibo</div>
+        </div>
+        <div class="fbp-lbl lbl-bwd">← BACKWARD — Preguntas de fricción</div>
+        <div class="fbp-qs">
+          <div class="fbq fq-r">← ¿Y si la impresora falla al emitir?<span class="new-req">Nuevo req.</span></div>
+          <div class="fbq fq-y">← ¿Y si la tarjeta no tiene fondos?<span class="new-req">Nuevo req.</span></div>
+          <div class="fbq fq-m">← ¿Y si el ítem se agota en carrito?<span class="new-req">Nuevo req.</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ══ S11 — PRODUCT TREE ══ -->
+<section class="slide" id="s11">
+<div class="inner">
+  <div class="eyebrow">Paso 2 · Obtención</div>
+  <div class="h2">Dinámica: <span class="lime">Árbol de Producto</span> — Descomposición Funcional</div>
+  <div class="tech-grid" style="margin-top:12px">
+    <div class="tech-col">
+      <div class="tblock"><div class="tag">Descripción</div><p>Descompone un sistema complejo en partes manejables mediante una jerarquía visual de árbol. Asegura que ninguna función quede fuera y facilita la estimación por capas de complejidad creciente.</p></div>
+      <div class="tblock"><div class="tag">Casos de Uso</div><p>Inicio de proyectos complejos para estructurar la arquitectura funcional. Cuando el cliente describe "todo lo que quiere" de forma desordenada y se necesita imponer estructura.</p></div>
+      <div class="tblock"><div class="tag">Paso a Paso</div><ol><li>Definir el sistema raíz (core del negocio)</li><li>Identificar módulos principales — Épicas (tronco)</li><li>Desglosar subfunciones — módulos (ramas)</li><li>Llegar a historias de usuario atómicas (hojas)</li><li>Clasificar hojas como Must/Should/Could Have</li></ol></div>
+      <div class="tblock ex"><div class="tag">Ejemplo Aplicado</div><p>E-commerce: Raíz = Plataforma. Tronco = Catálogo, Carrito, Pagos, Usuarios. Rama "Pagos" = Tarjeta, PSE, Contraentrega. Hoja = "Mostrar error si token PSE expira" → HU lista para estimar.</p></div>
+    </div>
+    <div class="tech-col">
+      <div class="tree-vis">
+        <div class="tree-lev"><div class="tn tn-leaf">Notif. Push</div><div class="tn tn-leaf">Tema Oscuro</div><div class="tn tn-leaf">Export CSV</div><div class="tn tn-leaf">Analytics</div></div>
+        <div class="tree-lbl">🍃 Hojas — Nice to haves (Could Have)</div>
+        <div class="tree-conn"></div>
+        <div class="tree-lev"><div class="tn tn-branch">Reportes</div><div class="tn tn-branch">Integrar PSE</div><div class="tn tn-branch">Búsqueda avanzada</div></div>
+        <div class="tree-lbl">🌿 Ramas — Módulos secundarios (Should Have)</div>
+        <div class="tree-conn"></div>
+        <div class="tree-lev"><div class="tn tn-trunk">Catálogo</div><div class="tn tn-trunk">Carrito</div><div class="tn tn-trunk">Pagos</div><div class="tn tn-trunk">Usuarios</div></div>
+        <div class="tree-lbl lm">🪵 Tronco — Funcionalidades vitales (Must Have / Épicas)</div>
+        <div class="tree-conn"></div>
+        <div class="tree-lev"><div class="tn tn-root">Base de Datos</div><div class="tn tn-root">Auth Core</div><div class="tn tn-root">API Gateway</div></div>
+        <div class="tree-lbl">🌱 Raíces — Infraestructura core</div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ══ S12 — AFFINITY MAP ══ -->
+<section class="slide" id="s12">
+<div class="inner">
+  <div class="eyebrow">Paso 2 · Obtención</div>
+  <div class="h2">Dinámica: <span class="lime">Juegos Colaborativos</span> — Affinity Map</div>
+  <div class="tech-grid" style="margin-top:12px">
+    <div class="tech-col">
+      <div class="tblock"><div class="tag">Descripción</div><p>Los participantes escriben problemas e ideas en Post-its que luego se agrupan por similitud temática. Revela el modelo mental compartido del equipo y pondera problemas por volumen, sin jerarquías de poder que inhiban la honestidad.</p></div>
+      <div class="tblock"><div class="tag">Casos de Uso</div><p>Inicio de proyectos complejos con múltiples stakeholders con visiones divergentes. Supera inhibiciones jerárquicas: el operario tiene la misma voz que el CEO.</p></div>
+      <div class="tblock"><div class="tag">Paso a Paso</div><ol><li>Cada participante escribe 1 problema/idea por nota (5 min silencio)</li><li>Pegar todas las notas sin orden en la pizarra</li><li>En silencio, agrupar notas por similitud (10 min)</li><li>Nombrar cada grupo con un encabezado descriptivo</li><li>Dot voting: cada persona vota los grupos más críticos</li></ol></div>
+      <div class="tblock ex"><div class="tag">Ejemplo Aplicado</div><p>Equipo de 8 personas. El 80% de los Post-its caen bajo "Lentitud del sistema". El equipo creía que el problema era de UI. El mapa revela que la prioridad es performance — reorientando el MVP completamente.</p></div>
+    </div>
+    <div class="tech-col">
+      <div class="aff-board">
+        <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Affinity Board</div>
+        <div class="aff-grp ag-red">
+          <div class="ag-hdr">Lentitud del Sistema <span style="font-size:10px;font-weight:400">80% 🔴🔴🔴</span></div>
+          <div class="sticky-row"><div class="sk sk-r">Cargas<br/>lentas</div><div class="sk sk-r">Timeouts<br/>frecuentes</div><div class="sk sk-r">Sin<br/>feedback</div><div class="sk sk-r">Esperas<br/>largas</div></div>
+        </div>
+        <div class="aff-grp ag-lime">
+          <div class="ag-hdr">Visibilidad de Estado <span style="font-size:10px;font-weight:400">15% 🟢🟢</span></div>
+          <div class="sticky-row"><div class="sk sk-g">Sin<br/>notificac.</div><div class="sk sk-g">Sin<br/>log</div><div class="sk sk-g">Sin<br/>alertas</div></div>
+        </div>
+        <div class="aff-grp ag-muted">
+          <div class="ag-hdr">UX / Navegación <span style="font-size:10px;font-weight:400">5%</span></div>
+          <div class="sticky-row"><div class="sk sk-m">Muchos<br/>clicks</div><div class="sk sk-m">Sin<br/>ayuda</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ══ S13 — ONE-ON-ONE ══ -->
+<section class="slide" id="s13">
+<div class="inner">
+  <div class="eyebrow">Paso 2 · Obtención</div>
+  <div class="h2">Técnica: Entrevistas <span class="lime">Uno a Uno</span></div>
+  <div class="fblocks" style="margin-top:12px">
+    <div class="fb"><div class="tag">Descripción</div><p>Conversación directa entre el PM y un stakeholder individual. Permite explorar motivaciones, miedos y contextos que no emergen en grupos donde la jerarquía inhibe la honestidad total.</p></div>
+    <div class="fb"><div class="tag">Casos de Uso</div><p>Etapas iniciales del proyecto. Temas políticamente sensibles como resistencia al cambio, miedo a la automatización. Stakeholders de alto poder que no asistirán a talleres grupales.</p></div>
+    <div class="fb"><div class="tag">Paso a Paso</div><ol><li>Preparar guía de preguntas abiertas</li><li>Enviar agenda previa: temas + duración (45–60 min)</li><li>Iniciar con: "Cuéntame cómo es un día típico en tu rol"</li><li>Usar los 5 Porqués para profundizar causas raíz</li><li>Escuchar activamente; no vender soluciones aún</li><li>Documentar con citas textuales del entrevistado</li></ol></div>
+    <div class="fb ex"><div class="tag">Ejemplo Aplicado</div><p>Al crear una app de RRHH, en la entrevista privada con el gerente descubres que su mayor temor es que el sistema reporte sus aprobaciones al CEO sin contexto. Esto genera el req. de "notas de justificación" — invisible en cualquier sesión grupal.</p>
+    <div class="vnote">💡 Visual: Diagrama de 5 Porqués — árbol radial hasta causa raíz</div></div>
+  </div>
+</div>
+</section>
+
+<!-- ══ S14 — JAD ══ -->
+<section class="slide" id="s14">
+<div class="inner">
+  <div class="eyebrow">Paso 2 · Obtención</div>
+  <div class="h2">Técnica: Talleres Facilitados — <span class="lime">JAD</span></div>
+  <div class="fblocks" style="margin-top:12px">
+    <div class="fb"><div class="tag">Descripción</div><p>Sesión estructurada que reúne simultáneamente a tomadores de decisión, usuarios y equipo técnico bajo un facilitador neutral. Produce decisiones en tiempo real, eliminando ciclos interminables de emails.</p></div>
+    <div class="fb"><div class="tag">Casos de Uso</div><p>Proyectos con múltiples departamentos en conflicto de prioridades. Cuando se necesita validar alcance en una sola sesión. Al inicio de cada sprint de descubrimiento para alinear expectativas.</p></div>
+    <div class="fb"><div class="tag">Paso a Paso</div><ol><li>Definir objetivo concreto del taller</li><li>Seleccionar participantes: 5–8 personas máximo</li><li>Preparar agenda con tiempos estrictos y dinámicas</li><li>Facilitador: moderar sin sesgar, capturar decisiones</li><li>Documentar acuerdos en pantalla visible durante la sesión</li><li>Distribuir actas en 24 horas con firma de validación</li></ol></div>
+    <div class="fb ex"><div class="tag">Ejemplo Aplicado</div><p>Sesión JAD de 3 horas para sistema de nómina con RRHH, Legal, Finanzas y Tech. Se resuelven 12 conflictos de prioridad, se descarta "liquidaciones automáticas" como Won't Have y se acuerdan criterios de aceptación de 8 HUs. Equivalente a 3 semanas de emails.</p>
+    <div class="jad-roles"><span class="role-pill rp-lime">Facilitador</span><span class="role-pill">Negocio</span><span class="role-pill">Usuarios</span><span class="role-pill">Tech Lead</span></div></div>
+  </div>
+</div>
+</section>
+
+<!-- ══ S15 — JOB SHADOWING ══ -->
+<section class="slide" id="s15">
+<div class="inner">
+  <div class="eyebrow">Paso 2 · Obtención</div>
+  <div class="h2">Técnica: <span class="lime">Job Shadowing</span> — Observación de Campo</div>
+  <div class="fblocks" style="margin-top:12px">
+    <div class="fb"><div class="tag">Descripción</div><p>Inmersión del PM en el entorno real de trabajo del usuario, observando cómo ejecuta sus tareas sin intervenir. Revela comportamientos tácitos, workarounds informales y fricciones que los usuarios no saben articular.</p></div>
+    <div class="fb"><div class="tag">Casos de Uso</div><p>Fundamental cuando los usuarios no logran describir sus procesos. Industrias con alta operación manual: logística, manufactura, salud. Reemplazos de software legacy con flujos "raros pero funcionales".</p></div>
+    <div class="fb"><div class="tag">Paso a Paso</div><ol><li>Coordinar sesión de 2–4 horas en el entorno real</li><li>Informar: "Observo el proceso, no evalúo tu trabajo"</li><li>Documentar: pasos, herramientas, excepciones, tiempos reales</li><li>Notar workarounds (ej: Excel paralelo al sistema oficial)</li><li>Preguntar solo al final: "¿Por qué haces esto así?"</li><li>Fotografiar el ambiente físico si es relevante para los reqs.</li></ol></div>
+    <div class="fb ex"><div class="tag">Ejemplo Aplicado</div><p>Observando a un operario de almacén registrar entregas, el PM nota que usa guantes gruesos al operar la tablet. Esto genera el requerimiento: <em>"Los botones de confirmación deben tener mínimo 80×80px."</em> Un requerimiento invisible en cualquier entrevista.</p>
+    <div class="vnote">💡 Visual: Tabla Observación — Paso · Herramienta · Workaround · Req. Generado</div></div>
+  </div>
+</div>
+</section>
+
+<!-- ══ S16 — INTRO PASO 3 ══ -->
+<section class="slide" id="s16">
+<div class="inner step-intro">
+  <div class="step-bg-n">03</div>
+  <div class="step-badge">Paso 3 de 5</div>
+  <div class="step-title">Análisis y<br/>Priorización</div>
+  <div class="divider"></div>
+  <div class="step-goal-lbl">Objetivo del Paso</div>
+  <p class="step-goal">Después de la obtención tenemos una "lista de deseos" sin filtrar. El objetivo es filtrar, ponderar y organizar estratégicamente esa lista para definir el <strong>MVP de la primera ola</strong>. Usamos marcos objetivos para quitarle la subjetividad a la priorización y forzar a los stakeholders a negociar con datos.</p>
+  <ul class="step-buls">
+    <li>Buy a Feature — votación con presupuesto ficticio que fuerza la negociación</li>
+    <li>Matriz Impacto vs. Esfuerzo — Quick Wins, Big Bets, Money Pits</li>
+    <li>MoSCoW — Must / Should / Could / Won't Have</li>
+    <li>Modelo Kano — Básicos, Desempeño, Deleitadores</li>
+    <li>RICE Scoring — fórmula cuantitativa de prioridad</li>
+  </ul>
+</div>
+</section>
+
+<!-- ══ S17 — BUY A FEATURE ══ -->
+<section class="slide" id="s17">
+<div class="inner">
+  <div class="eyebrow">Paso 3 · Análisis</div>
+  <div class="h2">Dinámica: <span class="lime">"Buy a Feature"</span></div>
+  <div class="tech-grid" style="margin-top:12px">
+    <div class="tech-col">
+      <div class="tblock"><div class="tag">Descripción</div><p>Los stakeholders reciben $1,000 ficticios y cada feature tiene un precio proporcional a su esfuerzo. Ninguna feature tiene precio suficientemente bajo para que una persona la compre sola, forzando la negociación grupal y revelando prioridades reales.</p></div>
+      <div class="tblock"><div class="tag">Casos de Uso</div><p>Cuando el backlog tiene 40+ funcionalidades. Cuando múltiples stakeholders tienen prioridades en conflicto. Cuando el cliente dice "todo es prioridad 1" y necesitamos forzar la negociación objetiva.</p></div>
+      <div class="tblock"><div class="tag">Paso a Paso</div><ol><li>Listar las funcionalidades del backlog (máx. 20 items)</li><li>Asignar precio proporcional al esfuerzo (1pt = 1 semana dev)</li><li>Dar $1,000 ficticios a cada participante</li><li>Compra individual (5 min) → compra grupal negociada (15 min)</li><li>Registrar negociaciones y justificaciones en tiempo real</li><li>El resultado es el ranking de prioridad validado por el grupo</li></ol></div>
+      <div class="tblock ex"><div class="tag">Ejemplo Aplicado</div><p>Con $1,000 en grupo negocian y priorizan: portal de facturación básico ($400) + búsqueda de catálogo ($300) + notificaciones de stock ($150). MVP definido por negociación real, no por jerarquía.</p></div>
+    </div>
+    <div class="tech-col">
+      <div class="baf-board">
+        <div class="baf-ttl">Tablero de Compra — $1,000 presupuesto grupal</div>
+        <div class="baf-items">
+          <div class="baf-item bi-yes"><div class="bi-name">Portal Facturación</div><div class="bi-price">$600</div><div class="bi-st">✓ COMPRADO</div></div>
+          <div class="baf-item bi-no"><div class="bi-name">Cotizaciones Auto.</div><div class="bi-price">$800</div><div class="bi-st">✗ No alcanzó</div></div>
+          <div class="baf-item bi-yes"><div class="bi-name">Búsqueda Catálogo</div><div class="bi-price">$300</div><div class="bi-st">✓ COMPRADO</div></div>
+          <div class="baf-item bi-yes"><div class="bi-name">Notif. de Stock</div><div class="bi-price">$150</div><div class="bi-st">✓ COMPRADO</div></div>
+          <div class="baf-item bi-no"><div class="bi-name">Chat Tiempo Real</div><div class="bi-price">$500</div><div class="bi-st">✗ Fase 2</div></div>
+          <div class="baf-item bi-no"><div class="bi-name">Reportes Avanzados</div><div class="bi-price">$350</div><div class="bi-st">✗ Fase 2</div></div>
+        </div>
+        <div class="baf-sum"><span>💰 Gastado: <strong class="lime">$1,050 / $1,000</strong></span><span>MVP: <strong class="lime">3 features</strong></span></div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ══ S18 — IMPACTO/ESFUERZO ══ -->
+<section class="slide" id="s18">
+<div class="inner">
+  <div class="eyebrow">Paso 3 · Análisis</div>
+  <div class="h2">Framework: Matriz <span class="lime">Impacto × Esfuerzo</span></div>
+  <div class="tech-grid" style="margin-top:12px">
+    <div class="tech-col" style="overflow:visible">
+      <div class="tblock"><div class="tag">Descripción</div><p>Mapea las características en un cuadrante 2×2 según el balance entre el valor entregado al negocio y el esfuerzo técnico requerido. Herramienta visual para decidir qué construir primero sin subjetividad.</p></div>
+      <div class="ie-legend">
+        <div class="ld"><div class="ld-dot" style="background:var(--lime)"></div><strong style="font-size:12px">Quick Wins</strong> — Alto impacto, bajo esfuerzo. Hacer primero. Siempre en MVP.</div>
+        <div class="ld"><div class="ld-dot" style="background:#5599CC"></div><strong style="font-size:12px">Big Bets</strong> — Alto/Alto. Planificar con Spikes. Alta prioridad estratégica.</div>
+        <div class="ld"><div class="ld-dot" style="background:#D4A017"></div><strong style="font-size:12px">Fill-ins</strong> — Bajo/Bajo. Solo si sobra capacidad en el sprint.</div>
+        <div class="ld"><div class="ld-dot" style="background:#E05858"></div><strong style="font-size:12px">Money Pits</strong> — Bajo impacto, alto esfuerzo. Descartar sin culpa.</div>
+      </div>
+      <div class="tblock ex"><div class="tag">Ejemplo Aplicado</div><p>Sistema de inventario: Búsqueda manual = Quick Win (alto impacto op., bajo esfuerzo). Chatbot IA = Money Pit (alto esfuerzo, bajo impacto inmediato). Marcado como Won't Have bajo MoSCoW.</p></div>
+    </div>
+    <div class="tech-col">
+      <div class="ie-mat">
+        <div class="iq iq-tl"><span class="iq-lbl lbl-qw">QUICK WINS</span><span class="iq-sub">Hacer primero</span><div class="iq-dot dot-g">Búsqueda manual</div><div class="iq-dot dot-g">Notif. SMS</div></div>
+        <div class="iq iq-tr"><span class="iq-lbl lbl-bb">BIG BETS</span><span class="iq-sub">Planificar</span><div class="iq-dot dot-b">Portal web</div></div>
+        <div class="iq iq-bl"><span class="iq-lbl lbl-fi">FILL-INS</span><span class="iq-sub">Si hay tiempo</span><div class="iq-dot dot-y">Dashboard básico</div></div>
+        <div class="iq iq-br"><span class="iq-lbl lbl-mp">MONEY PITS</span><span class="iq-sub">Evitar</span><div class="iq-dot dot-r">IA Routing</div><div class="iq-dot dot-r">Chatbot</div></div>
+        <div class="ie-ax-x">← Bajo Esfuerzo ———————————— Alto Esfuerzo →</div>
+        <div class="ie-ax-y">↑ Alto Impacto · Bajo Impacto ↓</div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ══ S19 — MOSCOW ══ -->
+<section class="slide" id="s19">
+<div class="inner">
+  <div class="eyebrow">Paso 3 · Análisis</div>
+  <div class="h2">Framework: Método <span class="lime">MoSCoW</span></div>
+  <div class="moscow-grid" style="margin-top:14px">
+    <div class="mc mc-M"><div class="mc-let">M</div><div><h3>Must Have <span class="mc-sub">Obligatorio</span></h3><p>Vital por negocio, seguridad o cumplimiento legal. Sin esto el producto no puede lanzarse. No es negociable bajo ninguna circunstancia.</p><div class="mc-ex">Ej: Login seguro, checkout funcional, compliance regulatorio.</div></div></div>
+    <div class="mc mc-S"><div class="mc-let">S</div><div><h3>Should Have <span class="mc-sub">Importante</span></h3><p>Alta importancia pero no crítica para el día 1. Puede omitirse temporalmente sin afectar el lanzamiento del MVP.</p><div class="mc-ex">Ej: Guardar carrito entre sesiones, exportar reportes.</div></div></div>
+    <div class="mc mc-C"><div class="mc-let">C</div><div><h3>Could Have <span class="mc-sub">Deseable</span></h3><p>Mejora la experiencia si hay capacidad disponible. No genera diferencial crítico si no está en el MVP inicial.</p><div class="mc-ex">Ej: Tema oscuro, animaciones, gamificación de puntos.</div></div></div>
+    <div class="mc mc-W"><div class="mc-let">W</div><div><h3>Won't Have <span class="mc-sub">Descartado F1</span></h3><p>Explícitamente excluido de esta fase. Documentarlo evita el scope creep y gestiona expectativas del cliente.</p><div class="mc-ex">Ej: Chatbot de IA para un MVP de pagos B2B.</div></div></div>
+  </div>
+</div>
+</section>
+
+<!-- ══ S20 — KANO ══ -->
+<section class="slide" id="s20">
+<div class="inner">
+  <div class="eyebrow">Paso 3 · Análisis</div>
+  <div class="h2">Framework: Modelo <span class="lime">Kano</span></div>
+  <div class="tech-grid" style="margin-top:12px">
+    <div class="tech-col" style="gap:12px">
+      <div class="kano-card"><div class="kano-ico lime">✦</div><div><h4 class="lime">Deleitadores</h4><span class="kano-sub">Funciones inesperadas — "Wow factor"</span><p>Generan satisfacción exponencial cuando están presentes. Su ausencia no crea insatisfacción. Son los diferenciadores que hacen hablar a los usuarios.</p><div class="kano-ex">Ej: Spotify Wrapped, entrega inesperada en 2 horas.</div></div></div>
+      <div class="kano-card"><div class="kano-ico" style="color:#7BBF25">↗</div><div><h4>Desempeño</h4><span class="kano-sub">Mientras más, mejor</span><p>La satisfacción crece linealmente con la cantidad/calidad. Son los features que el usuario menciona explícitamente en entrevistas.</p><div class="kano-ex">Ej: Cada 100ms menos de carga = +1% conversión.</div></div></div>
+      <div class="kano-card"><div class="kano-ico" style="color:var(--muted)">—</div><div><h4>Básicos</h4><span class="kano-sub">El mínimo esperado</span><p>Si no están presentes, el usuario queda muy insatisfecho. Si están, simplemente se aceptan como normal. Nadie los menciona porque se dan por sentados.</p><div class="kano-ex">Ej: No tener "Olvidé mi contraseña" genera abandono inmediato.</div></div></div>
+    </div>
+    <div class="tech-col">
+      <div class="kano-chart">
+        <svg viewBox="0 0 400 300" width="100%" style="max-height:260px">
+          <line x1="40" y1="270" x2="385" y2="270" stroke="var(--border2)" stroke-width="1.5"/>
+          <line x1="40" y1="270" x2="40" y2="20" stroke="var(--border2)" stroke-width="1.5"/>
+          <polygon points="385,266 393,270 385,274" fill="var(--border2)"/>
+          <polygon points="36,20 40,12 44,20" fill="var(--border2)"/>
+          <text x="215" y="290" text-anchor="middle" fill="var(--muted)" font-size="10" font-family="Outfit">Inversión / Implementación</text>
+          <text x="14" y="148" text-anchor="middle" fill="var(--muted)" font-size="10" font-family="Outfit" transform="rotate(-90 14 148)">Satisfacción del Usuario</text>
+          <!-- Delight curve -->
+          <path d="M 40 255 C 100 230,160 170,210 120 C 260 70,320 40,380 22" stroke="#93DA33" stroke-width="2.5" fill="none"/>
+          <text x="340" y="16" fill="#93DA33" font-size="10" font-family="Outfit" font-weight="700">Deleitadores</text>
+          <!-- Performance line -->
+          <path d="M 40 230 L 380 70" stroke="#93DA33" stroke-width="2" fill="none" stroke-dasharray="6 3" opacity=".6"/>
+          <text x="330" y="62" fill="#93DA33" font-size="10" font-family="Outfit" font-weight="700" opacity=".7">Desempeño</text>
+          <!-- Basic curve -->
+          <path d="M 40 210 C 100 185,160 172,220 165 C 280 158,330 155,380 153" stroke="#93DA33" stroke-width="2" fill="none" stroke-dasharray="3 5" opacity=".4"/>
+          <text x="330" y="148" fill="#93DA33" font-size="10" font-family="Outfit" font-weight="700" opacity=".45">Básicos</text>
+          <line x1="40" y1="148" x2="385" y2="148" stroke="var(--border)" stroke-width="1" stroke-dasharray="4"/>
+          <text x="52" y="144" fill="var(--muted)" font-size="9" font-family="Outfit">Neutro</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ══ S21 — RICE ══ -->
+<section class="slide" id="s21">
+<div class="inner">
+  <div class="eyebrow">Paso 3 · Análisis</div>
+  <div class="h2">Framework: <span class="lime">RICE Scoring</span></div>
+  <div class="rice-bar">
+    <span class="rice-eq">RICE =</span>
+    <div class="rice-frac"><div class="rice-num">Reach × Impact × Confidence</div><div class="rice-line2"></div><div class="rice-den">Effort</div></div>
+  </div>
+  <div class="rice-cards">
+    <div class="rc"><div class="rc-let rc-lime">R</div><div><strong>Reach</strong><p>Usuarios alcanzados por quarter</p><div class="rc-sc">Escala: # personas reales</div><div class="rc-ex">Ej: 500 usuarios activos</div></div></div>
+    <div class="rc"><div class="rc-let rc-lime">I</div><div><strong>Impact</strong><p>Nivel de impacto por usuario</p><div class="rc-sc">3=Alto · 1=Medio · 0.25=Bajo</div><div class="rc-ex">Ej: 3 (afecta conversión)</div></div></div>
+    <div class="rc"><div class="rc-let rc-lime">C</div><div><strong>Confidence</strong><p>Confianza en los datos</p><div class="rc-sc">100% / 80% / 50%</div><div class="rc-ex">Ej: 80% (validado en entrevistas)</div></div></div>
+    <div class="rc"><div class="rc-let rc-red">E</div><div><strong>Effort</strong><p>Personas-mes requeridas</p><div class="rc-sc">1 = 1 mes-persona</div><div class="rc-ex">Ej: 2 meses-persona</div></div></div>
+  </div>
+  <div class="rice-calc-box">
+    <div class="rice-calc-ttl">"Notificaciones de estado de pedido":</div>
+    <div class="rice-calc">( 500 × 3 × 0.80 ) ÷ 2 = <span class="rice-score">600</span></div>
+  </div>
+</div>
+</section>
+
+<!-- ══ S22 — INTRO PASO 4 ══ -->
+<section class="slide" id="s22">
+<div class="inner step-intro">
+  <div class="step-bg-n">04</div>
+  <div class="step-badge">Paso 4 de 5</div>
+  <div class="step-title">Especificación</div>
+  <div class="divider"></div>
+  <div class="step-goal-lbl">Objetivo del Paso</div>
+  <p class="step-goal">Traducir los requerimientos priorizados a lenguaje estructurado y accionable que el equipo de desarrollo pueda codificar con claridad y <em>sin ambigüedad</em>. Cada Historia de Usuario debe tener criterios de aceptación medibles que la Tríada pueda verificar. El objetivo no es escribir documentación — es <strong>eliminar la ambigüedad antes de tocar el teclado</strong>.</p>
+  <ul class="step-buls">
+    <li>Historias de Usuario con mentalidad INVEST — independiente, negociable, valiosa, estimable, pequeña, testeable</li>
+    <li>Casos de Uso y Modelado de Estados del sistema para cada HU crítica</li>
+    <li>Diccionario de Datos con entidades, atributos y validaciones</li>
+  </ul>
+</div>
+</section>
+
+<!-- ══ S23 — INVEST ══ -->
+<section class="slide" id="s23">
+<div class="inner">
+  <div class="eyebrow">Paso 4 · Especificación</div>
+  <div class="h2">Técnica: Historias de Usuario — <span class="lime">INVEST</span></div>
+  <div class="invest-grid" style="margin-top:12px">
+    <div class="inv-c"><div class="inv-let">I</div><div><h4>Independiente</h4><p>No depende de otra HU para desarrollarse ni estimarse de forma aislada.</p></div></div>
+    <div class="inv-c"><div class="inv-let">N</div><div><h4>Negociable</h4><p>El alcance puede ajustarse sin perder el valor de negocio central.</p></div></div>
+    <div class="inv-c"><div class="inv-let">V</div><div><h4>Valiosa</h4><p>Entrega valor real y medible al usuario o al negocio directamente.</p></div></div>
+    <div class="inv-c"><div class="inv-let">E</div><div><h4>Estimable</h4><p>El equipo técnico puede asignarle puntos de historia con claridad.</p></div></div>
+    <div class="inv-c"><div class="inv-let">S</div><div><h4>Small</h4><p>Completable en un sprint. Si no, fragmentarla en sub-historias.</p></div></div>
+    <div class="inv-c"><div class="inv-let">T</div><div><h4>Testeable</h4><p>Tiene criterios de aceptación objetivos y verificables para QA.</p></div></div>
+  </div>
+  <div class="hu-box">
+    <div class="hu-fmt">Como <span class="hhl">operador de almacén</span>, quiero <span class="hhl">escanear QR desde mi teléfono sin internet</span>, para <span class="hhlw">registrar entregas aunque esté en zona sin cobertura.</span></div>
+    <div class="ca-wrap">
+      <div class="ca-ttl">Criterios de Aceptación:</div>
+      <div class="ca-it">✓ Escáner responde &lt; 1.5 seg en modo offline</div>
+      <div class="ca-it">✓ Datos sincronizan automáticamente al recuperar señal</div>
+      <div class="ca-it">✓ Si QR inválido: mensaje de error con código descriptivo</div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ══ S24 — CASOS DE USO ══ -->
+<section class="slide" id="s24">
+<div class="inner">
+  <div class="eyebrow">Paso 4 · Especificación</div>
+  <div class="h2">Técnica: Casos de Uso y <span class="lime">Modelado de Estados</span></div>
+  <div class="fblocks" style="margin-top:12px">
+    <div class="fb"><div class="tag">Descripción</div><p>Los Casos de Uso describen la interacción paso a paso entre un actor y el sistema, incluyendo flujo principal, alternativos y de error. El Modelado de Estados define todas las respuestas posibles del sistema ante cada acción posible.</p></div>
+    <div class="fb"><div class="tag">Casos de Uso</div><p>Sistemas con flujos transaccionales complejos: estados de pedido, aprobaciones multinivel, flujos de pagos. Cuando el equipo necesita claridad sobre las respuestas del sistema ante condiciones excepcionales.</p></div>
+    <div class="fb"><div class="tag">Paso a Paso</div><ol><li>Identificar actores del sistema</li><li>Definir precondición (estado inicial del sistema)</li><li>Escribir el flujo básico de éxito (happy path)</li><li>Escribir flujos alternativos y de excepción</li><li>Modelar estados: nodos + flechas (transición + gatillo)</li></ol></div>
+    <div class="fb ex"><div class="tag">Ejemplo: Diagrama de Estados de una Aprobación</div>
+      <div class="state-d">
+        <div class="sn">RECIBIDA</div>
+        <div class="sarr">↓ Asignar revisor</div>
+        <div class="sn sn-active">EN REVISIÓN</div>
+        <div class="sfork">
+          <div class="sfork-b"><div class="sarr">↙ Aprobar</div><div class="sn sn-ok">APROBADA</div></div>
+          <div class="sfork-b"><div class="sarr">↘ Rechazar</div><div class="sn sn-err">RECHAZADA</div></div>
+        </div>
+        <div class="sarr" style="color:#D4A017">↑ Reintentar (subsanación)</div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ══ S25 — INTRO PASO 5 ══ -->
+<section class="slide" id="s25">
+<div class="inner step-intro">
+  <div class="step-bg-n">05</div>
+  <div class="step-badge">Paso 5 de 5</div>
+  <div class="step-title">Validación</div>
+  <p class="step-sub">"Show, Don't Tell"</p>
+  <div class="divider"></div>
+  <div class="step-goal-lbl">Objetivo del Paso</div>
+  <p class="step-goal">Garantizar que estamos a punto de construir lo correcto antes de que el equipo escriba una sola línea de código. Visualizamos los flujos con prototipos, filtramos cada ticket con la Matriz DVF y obtenemos el sign-off formal del cliente mediante un Playback. <strong>Una semana de validación evita meses de retrabajo.</strong></p>
+  <ul class="step-buls">
+    <li>Prototipado rápido y Storyboarding visual en Figma</li>
+    <li>Matriz Ácida DVF — Deseabilidad, Viabilidad, Factibilidad</li>
+    <li>Playback con el Cliente + Sign-off formal del Scope de la Ola</li>
+  </ul>
+</div>
+</section>
+
+<!-- ══ S26 — PROTOTIPADO ══ -->
+<section class="slide" id="s26">
+<div class="inner">
+  <div class="eyebrow">Paso 5 · Validación</div>
+  <div class="h2">Técnica: <span class="lime">Prototipado</span> y Storyboarding</div>
+  <div class="tech-grid" style="margin-top:12px">
+    <div class="tech-col">
+      <div class="tblock"><div class="tag">Descripción</div><p>Creación de wireframes o mockups navegables antes de codificar. El objetivo no es el pixel-perfect — es iniciar conversaciones constructivas y validar flujos antes de que el equipo toque el código. El cliente reacciona a lo visual, no a texto.</p></div>
+      <div class="tblock"><div class="tag">Casos de Uso</div><p>Cualquier proyecto con interfaz de usuario. Especialmente crítico en flujos complejos: checkout, onboarding, dashboards analíticos con múltiples roles.</p></div>
+      <div class="tblock"><div class="tag">Paso a Paso</div><ol><li>Seleccionar el flujo más crítico del MVP primero</li><li>Crear wireframe de baja fidelidad (5–10 pantallas)</li><li>Presentar como secuencia narrativa al cliente</li><li>Capturar feedback: "¿Qué esperabas que pasara aquí?"</li><li>Iterar máx. 2 rondas antes de alta fidelidad en Figma</li><li>Validar flujo completo con el Playback formal</li></ol></div>
+      <div class="tblock ex"><div class="tag">Ejemplo Aplicado</div><p>Al mostrar el wireframe del checkout B2B, el cliente nota que no hay campo de "Orden de Compra corporativa" — requisito legal invisible. Detectado en 30 min vs. 2 semanas de desarrollo perdido.</p></div>
+    </div>
+    <div class="tech-col">
+      <div class="proto-wrap">
+        <div class="tag">Wireframe — Checkout B2B</div>
+        <div class="mock-phone">
+          <div class="mock-head">Checkout — Paso 2/3</div>
+          <div class="mock-f">Empresa / RUT</div>
+          <div class="mock-f mock-fh">Orden de Compra * ← NUEVO req.</div>
+          <div class="mock-f">Método de Pago</div>
+          <div class="mock-f">Dirección de entrega</div>
+          <div class="mock-btn-bar">Continuar →</div>
+        </div>
+        <div class="sb-wrap">
+          <div class="sb-t">Storyboard</div>
+          <div class="sb-frames">
+            <div class="sbf">1<div class="sbf-lbl">Ingreso</div></div>
+            <div class="sbf">2<div class="sbf-lbl">Carrito</div></div>
+            <div class="sbf sbf-on">3<div class="sbf-lbl">Checkout</div></div>
+            <div class="sbf">4<div class="sbf-lbl">Confirm.</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ══ S27 — DVF + PLAYBACK ══ -->
+<section class="slide" id="s27">
+<div class="inner">
+  <div class="eyebrow">Paso 5 · Validación</div>
+  <div class="h2">Técnica: Matriz Ácida <span class="lime">DVF</span> + Playback</div>
+  <div class="tech-grid" style="margin-top:12px">
+    <div class="tech-col">
+      <div class="tblock"><div class="tag">Descripción</div><p>Antes de que un ticket entre al backlog, la Tríada (PM, Diseño, Tech Lead) califica del 1 al 10 en tres ejes: Deseabilidad, Viabilidad y Factibilidad. Solo pasa lo que supera el umbral acordado por el equipo — normalmente 21/30.</p></div>
+      <div class="tblock"><div class="tag">Paso a Paso — Playback</div><ol><li>PM presenta cada HU apoyado en el prototipo Figma</li><li>Tríada califica D, V y F en tiempo real (1–10)</li><li>Features con D+V+F &gt; 21/30 pasan al sprint backlog</li><li>Cliente valida el flujo completo en el Playback</li><li>Cliente firma el "Scope Fence" de la ola</li><li>Actas con acuerdos distribuidas en 24 horas</li></ol></div>
+      <div class="tblock ex"><div class="tag">Ejemplo Aplicado</div><p>'Exportar PDF': D=9, V=8, F=4 (integración compleja). Total=21. Al borde. Tech Lead propone 'exportar CSV primero' (F=9). Nueva puntuación=26. Entra al MVP con alcance ajustado y todos alineados.</p></div>
+    </div>
+    <div class="tech-col">
+      <div class="dvf-vis">
+        <div class="dvf-bars">
+          <div class="dvf-bar"><div class="dvf-fill" style="height:90%"></div><div class="dvf-sc">9</div><div class="dvf-let lm">D</div><div class="dvf-nm">Deseabilidad</div><div class="dvf-q">¿El usuario lo quiere?</div></div>
+          <div class="dvf-bar"><div class="dvf-fill" style="height:80%"></div><div class="dvf-sc">8</div><div class="dvf-let">V</div><div class="dvf-nm">Viabilidad</div><div class="dvf-q">¿Genera ROI?</div></div>
+          <div class="dvf-bar"><div class="dvf-fill" style="height:70%"></div><div class="dvf-sc">7</div><div class="dvf-let">F</div><div class="dvf-nm">Factibilidad</div><div class="dvf-q">¿Podemos construirlo?</div></div>
+        </div>
+        <div class="dvf-tot"><span>TOTAL:</span><span class="dvf-tot-n">24 / 30</span><span class="dvf-pass">✓ PASA AL BACKLOG</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ══ S28 — CASO P1 ══ -->
+<section class="slide" id="s28">
+<div class="inner">
+  <div class="case-hdr"><span class="case-badge">Caso Práctico · TrackPro Logistics</span><span class="case-part">1 / 4</span></div>
+  <div class="h2" style="font-size:clamp(18px,2.4vw,28px)">Plataforma Logística B2B — <span class="lime">Preparación y Obtención</span></div>
+  <div class="case-ctx">📦 Cliente: empresa distribución regional, 300 empleados. Solicitud inicial: <em>"Necesitamos un sistema para rastrear nuestras rutas."</em> — sin más contexto.</div>
+  <div class="case-2col">
+    <div class="case-col">
+      <div class="cphlbl">Paso 1 · Preparación</div>
+      <div class="cblock"><h4>Benchmarking Previo</h4><p>PM investiga Beetrack, SimpliRoute y LogiNext. Hipótesis inicial: el cliente quiere tracking GPS. Pero el 80% de los tickets en Zendesk son por "entregas sin notificación" — reorientando la hipótesis antes de la primera sesión.</p></div>
+      <div class="cblock"><h4>Mapeo de Stakeholders</h4><p>CEO=Promotor (ROI y reducción de llamadas) · Jefe de Flota=Defensor (simplicidad operativa) · Gerente IT=Latente (integración ERP). Se planifican 2 entrevistas individuales + 1 taller JAD.</p></div>
+    </div>
+    <div class="case-col">
+      <div class="cphlbl lime">Paso 2 · Obtención — Hallazgos Clave</div>
+      <div class="cblock hl"><h4>Entrevista One-on-One — CEO</h4><p>Dolor real: <em>"El 40% de mis llamadas de soporte son clientes preguntando dónde está su pedido."</em> → Req. oculto: notificaciones proactivas al cliente final, no solo rastreo interno.</p></div>
+      <div class="cblock hl"><h4>Job Shadowing — Conductor</h4><p>PM observa al conductor confirmar entregas via WhatsApp porque el sistema no funciona sin WiFi. Req. emergente: app 100% offline con sincronización posterior.</p></div>
+      <div class="cblock hl"><h4>Affinity Map — Taller JAD (12 personas)</h4><p>65% de notas caen bajo "Sin visibilidad del estado". La hipótesis GPS queda descartada. El MVP se reorienta completamente hacia notificaciones y panel de estado.</p></div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ══ S29 — CASO P2 ══ -->
+<section class="slide" id="s29">
+<div class="inner">
+  <div class="case-hdr"><span class="case-badge">Caso Práctico · TrackPro Logistics</span><span class="case-part">2 / 4</span></div>
+  <div class="h2" style="font-size:clamp(18px,2.4vw,28px)">Plataforma Logística B2B — <span class="lime">Análisis y Priorización</span></div>
+  <div class="case-2col">
+    <div class="case-col">
+      <div class="cphlbl">Sesión Buy a Feature — $1,000 por stakeholder</div>
+      <div class="baf-compact">
+        <div class="baf-r yes"><div class="baf-m2 bm-M">M</div><span class="baf-fn">App offline conductores</span><span class="baf-fp">$700</span><span class="baf-ri">RICE:840</span><span class="chk">✓</span></div>
+        <div class="baf-r yes"><div class="baf-m2 bm-M">M</div><span class="baf-fn">Notif. SMS cliente final</span><span class="baf-fp">$400</span><span class="baf-ri">RICE:720</span><span class="chk">✓</span></div>
+        <div class="baf-r yes"><div class="baf-m2 bm-S">S</div><span class="baf-fn">Dashboard gerencial KPIs</span><span class="baf-fp">$300</span><span class="baf-ri">RICE:600</span><span class="chk">✓</span></div>
+        <div class="baf-r yes"><div class="baf-m2 bm-S">S</div><span class="baf-fn">Portal web clientes</span><span class="baf-fp">$500</span><span class="baf-ri">RICE:480</span><span class="chk">✓</span></div>
+        <div class="baf-r no"><div class="baf-m2 bm-W">W</div><span class="baf-fn">Integración ERP SAP</span><span class="baf-fp">$900</span><span class="baf-ri">RICE:210</span><span class="crs">✗</span></div>
+        <div class="baf-r no"><div class="baf-m2 bm-W">W</div><span class="baf-fn">Ruteo automático IA</span><span class="baf-fp">$1,100</span><span class="baf-ri">RICE:180</span><span class="crs">✗</span></div>
+      </div>
+      <div class="mvp-b">🎯 MVP Ola 1: App offline + Notif. SMS + Dashboard + Portal web (F2)</div>
+    </div>
+    <div class="case-col">
+      <div class="cphlbl">Matriz Impacto / Esfuerzo — Resultado</div>
+      <div class="ie-mat" style="max-height:230px">
+        <div class="iq iq-tl"><span class="iq-lbl lbl-qw">QUICK WINS</span><div class="iq-dot dot-g">App offline</div><div class="iq-dot dot-g">Notif. SMS</div></div>
+        <div class="iq iq-tr"><span class="iq-lbl lbl-bb">BIG BETS</span><div class="iq-dot dot-b">Portal web clientes</div></div>
+        <div class="iq iq-bl"><span class="iq-lbl lbl-fi">FILL-INS</span><div class="iq-dot dot-y">Dashboard básico</div></div>
+        <div class="iq iq-br"><span class="iq-lbl lbl-mp">MONEY PITS</span><div class="iq-dot dot-r">ERP SAP</div><div class="iq-dot dot-r">IA Routing</div></div>
+        <div class="ie-ax-x">← Bajo Esfuerzo ——— Alto Esfuerzo →</div>
+        <div class="ie-ax-y">↑ Alto Impacto · Bajo ↓</div>
+      </div>
+      <div class="cblock"><h4>Decisión MoSCoW</h4><p>ERP SAP y IA de Ruteo marcados como <strong>Won't Have</strong> en Ola 1. Documentados explícitamente para gestionar expectativas del cliente y evitar scope creep futuro.</p></div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ══ S30 — CASO P3 ══ -->
+<section class="slide" id="s30">
+<div class="inner">
+  <div class="case-hdr"><span class="case-badge">Caso Práctico · TrackPro Logistics</span><span class="case-part">3 / 4</span></div>
+  <div class="h2" style="font-size:clamp(18px,2.4vw,28px)">Plataforma Logística B2B — <span class="lime">Especificación</span></div>
+  <div class="hu-list">
+    <div class="hu-c">
+      <div class="hu-id">HU-01 <span class="inv-ck">INVEST ✓</span></div>
+      <div class="hu-body">Como <span class="hhl">conductor de reparto</span>, quiero <span class="hhl">confirmar entrega escaneando QR sin conexión</span>, para <span class="hhlw">registrar la entrega aunque esté en zona sin cobertura.</span></div>
+      <div class="hu-cas"><span class="ca-it">✓ Escáner responde &lt; 1.5s offline</span><span class="ca-it">✓ Sincroniza al recuperar señal</span><span class="ca-it">✓ Error descriptivo si QR inválido</span><span class="ca-it">✓ Almacena GPS + timestamp + foto</span></div>
+    </div>
+    <div class="hu-c">
+      <div class="hu-id">HU-02 <span class="inv-ck">INVEST ✓</span></div>
+      <div class="hu-body">Como <span class="hhl">cliente corporativo</span>, quiero <span class="hhl">recibir SMS cuando mi pedido sale y cuando se confirma entrega</span>, para <span class="hhlw">saber el estado sin llamar al proveedor.</span></div>
+      <div class="hu-cas"><span class="ca-it">✓ SMS enviado &lt; 2 min tras cambio de estado</span><span class="ca-it">✓ Incluye guía, conductor y ETA</span><span class="ca-it">✓ Alerta al gestor si número desactualizado</span></div>
+    </div>
+    <div class="hu-c">
+      <div class="hu-id">HU-03 <span class="inv-ck">INVEST ✓</span></div>
+      <div class="hu-body">Como <span class="hhl">gerente de operaciones</span>, quiero <span class="hhl">ver dashboard en tiempo real con % de entregas y alertas de retraso</span>, para <span class="hhlw">tomar decisiones sin esperar reportes manuales.</span></div>
+      <div class="hu-cas"><span class="ca-it">✓ Carga en &lt; 3s, latencia máx. 5 min</span><span class="ca-it">✓ Alerta si entrega supera ETA en 30 min</span><span class="ca-it">✓ Filtros por zona, conductor y fecha</span></div>
+    </div>
+  </div>
+  <div class="dict-note">📋 Diccionario de Datos: Entidad <strong>Entrega</strong> (id, conductor_id, cliente_id, estado [ENUM], gps_lat, gps_lng, foto_url, timestamp_offline, timestamp_sync, ETA_estimado). Cada campo con tipo, obligatoriedad, validaciones y FK.</div>
+</div>
+</section>
+
+<!-- ══ S31 — CASO P4 ══ -->
+<section class="slide" id="s31">
+<div class="inner">
+  <div class="case-hdr"><span class="case-badge">Caso Práctico · TrackPro Logistics</span><span class="case-part">4 / 4</span></div>
+  <div class="h2" style="font-size:clamp(18px,2.4vw,28px)">Plataforma Logística B2B — <span class="lime">Validación y Sign-off</span></div>
+  <div class="case-2col">
+    <div class="case-col">
+      <div class="cphlbl">Figma Prototyping — Semana de Validación</div>
+      <div class="proto-steps">
+        <div class="ps"><div class="ps-n">1</div><div><strong>Diseñador crea 3 flujos en Figma</strong><p>Conductor (scan→offline→sync), cliente (SMS→portal), gerente (dashboard). 18 pantallas. Tiempo total: 2 días.</p></div></div>
+        <div class="ps"><div class="ps-n">2</div><div><strong>Sesión con Jefe de Flota</strong><p>Descubre: pantalla de ruta necesita foto y nombre del conductor visible. Req. nuevo, bajo esfuerzo — entra al sprint.</p></div></div>
+        <div class="ps"><div class="ps-n">3</div><div><strong>Sesión CEO + Gerente Comercial</strong><p>CEO pide alertas de retraso también por email. Gerente pide logo del cliente en SMS. Ambos como Could Have F2.</p></div></div>
+        <div class="ps"><div class="ps-n">4</div><div><strong>Playback formal con 4 stakeholders</strong><p>CEO: "Esto es exactamente lo que necesitamos." Firma el Scope Fence de Ola 1. Kick-off autorizado. ✅</p></div></div>
+      </div>
+    </div>
+    <div class="case-col">
+      <div class="cphlbl">Matriz DVF — Evaluación Tríada</div>
+      <div class="dvf-tbl-wrap">
+        <table class="dvf-tbl">
+          <thead><tr><th>Feature</th><th>D</th><th>V</th><th>F</th><th>Total</th><th>Resultado</th></tr></thead>
+          <tbody>
+            <tr class="pass-r"><td>App offline (HU-01)</td><td>9</td><td>9</td><td>7</td><td class="lime">25</td><td class="lime">✓</td></tr>
+            <tr class="pass-r"><td>SMS notificaciones (HU-02)</td><td>9</td><td>8</td><td>9</td><td class="lime">26</td><td class="lime">✓</td></tr>
+            <tr class="pass-r"><td>Dashboard gerencial (HU-03)</td><td>8</td><td>9</td><td>8</td><td class="lime">25</td><td class="lime">✓</td></tr>
+            <tr class="pass-r"><td>Foto conductor en portal</td><td>7</td><td>6</td><td>9</td><td class="lime">22</td><td class="lime">✓</td></tr>
+            <tr class="fail-r"><td>Logo cliente en SMS</td><td>5</td><td>4</td><td>7</td><td style="color:#E05858">16</td><td style="color:#E05858">✗</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="okr-box">
+        <div class="okr-t">📊 OKRs acordados en Playback</div>
+        <div class="okr-it">KR1: Reducir llamadas de soporte -60% en mes 3</div>
+        <div class="okr-it">KR2: 95% entregas confirmadas digitalmente en mes 2</div>
+        <div class="okr-it">KR3: NPS clientes corporativos ≥ 8.0</div>
+      </div>
+      <div class="scope-f">✅ SCOPE FENCE OLA 1 FIRMADO — Kick-off Autorizado</div>
+    </div>
+  </div>
+</div>
+</section>
+
+</main><!-- /deck -->
+
+<script>
+const TOTAL = 31;
+let cur = 0, busy = false;
+
+// ── INIT
+document.addEventListener('DOMContentLoaded', () => {
+  buildDots();
+  sync();
+  bind();
+  fire(slide(0));
+
+  // Restore theme
+  try {
+    const t = localStorage.getItem('at-theme');
+    if (t) document.documentElement.setAttribute('data-theme', t);
+  } catch(e) {}
+});
+
+function slide(i) { return document.getElementById('s' + (i + 1)); }
+
+// ── DOTS
+function buildDots() {
+  const rail = document.getElementById('dotsRail');
+  const phases = [5, 8, 15, 21, 24]; // 0-indexed intro slides
+  for (let i = 0; i < TOTAL; i++) {
+    const b = document.createElement('button');
+    b.className = 'dot' + (phases.includes(i) ? ' phase' : '');
+    b.title = 'Lámina ' + (i + 1);
+    b.onclick = () => goTo(i);
+    rail.appendChild(b);
+  }
+}
+
+// ── SYNC UI
+function sync() {
+  document.getElementById('cur').textContent = cur + 1;
+  document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('on', i === cur));
+  document.getElementById('prevBtn').disabled = cur === 0;
+  document.getElementById('nextBtn').disabled = cur === TOTAL - 1;
+  document.getElementById('pFill').style.width = ((cur + 1) / TOTAL * 100) + '%';
+}
+
+// ── NAVIGATE
+function goTo(i) {
+  if (busy || i === cur || i < 0 || i >= TOTAL) return;
+  busy = true;
+  const from = slide(cur), to = slide(i);
+  const fwd = i > cur;
+
+  from.classList.add('out');
+  from.classList.remove('active');
+  to.style.transform = fwd ? 'translateX(48px)' : 'translateX(-48px)';
+  to.style.opacity = '0';
+
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    to.style.transform = 'translateX(0)';
+    to.style.opacity = '1';
+    to.classList.add('active');
+    setTimeout(() => {
+      from.classList.remove('out');
+      from.style.transform = '';
+      from.style.opacity = '';
+      cur = i;
+      sync();
+      fire(to);
+      busy = false;
+    }, 460);
+  }));
+}
+
+// ── FIRE ANIMATIONS
+function fire(sl) {
+  sl.querySelectorAll('.anim').forEach(el => {
+    el.style.animation = 'none';
+    el.offsetHeight;
+    el.style.animation = '';
+  });
+
+  // DVF bars
+  sl.querySelectorAll('.dvf-fill').forEach(bar => {
+    const h = bar.style.height;
+    bar.style.height = '0%';
+    setTimeout(() => { bar.style.height = h; }, 120);
+  });
+
+  // Count up big number
+  sl.querySelectorAll('.problem-num').forEach(el => {
+    const m = el.textContent.match(/\d+/);
+    if (!m) return;
+    const target = parseInt(m[0]);
+    const suf = el.innerHTML.replace(/\d+/, '');
+    let c = 0;
+    const t = setInterval(() => {
+      c = Math.min(c + Math.ceil(target / 40), target);
+      el.innerHTML = c + suf;
+      if (c >= target) clearInterval(t);
+    }, 800 / 40);
+  });
+
+  // RICE score
+  const rs = sl.querySelector('.rice-score');
+  if (rs) {
+    const target = parseInt(rs.textContent);
+    let c = 0;
+    const t = setInterval(() => {
+      c = Math.min(c + 15, target);
+      rs.textContent = c;
+      if (c >= target) clearInterval(t);
+    }, 18);
+  }
+}
+
+// ── BIND
+function bind() {
+  document.getElementById('prevBtn').onclick = () => goTo(cur - 1);
+  document.getElementById('nextBtn').onclick = () => goTo(cur + 1);
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); goTo(cur + 1); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); goTo(cur - 1); }
+    if (e.key === 'Home') goTo(0);
+    if (e.key === 'End') goTo(TOTAL - 1);
+  });
+
+  document.getElementById('themeBtn').onclick = () => {
+    const html = document.documentElement;
+    const dark = html.getAttribute('data-theme') === 'dark';
+    html.setAttribute('data-theme', dark ? 'light' : 'dark');
+    try { localStorage.setItem('at-theme', dark ? 'light' : 'dark'); } catch(e) {}
+  };
+
+  // Swipe
+  let tx = 0, ty = 0;
+  document.addEventListener('touchstart', e => { tx = e.touches[0].clientX; ty = e.touches[0].clientY; }, { passive: true });
+  document.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - tx;
+    const dy = e.changedTouches[0].clientY - ty;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) {
+      if (dx < 0) goTo(cur + 1); else goTo(cur - 1);
+    }
+  }, { passive: true });
+
+  // Scroll
+  let wt = null;
+  document.addEventListener('wheel', e => {
+    if (wt) return;
+    wt = setTimeout(() => { wt = null; }, 700);
+    if (e.deltaY > 25) goTo(cur + 1);
+    else if (e.deltaY < -25) goTo(cur - 1);
+  }, { passive: true });
+}
+
+window.goTo = goTo;
+</script>
+</body>
+</html>
